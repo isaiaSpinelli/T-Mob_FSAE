@@ -4,12 +4,28 @@ import androidx.core.content.FileProvider
 import java.io.File
 
 fun getFileModelsFromFiles(files: List<File>): List<FileModel> {
+
     return files.map {
-        FileModel(it.path, FileType.getFileType(it), it.name, convertFileSizeToMB(it.length()), it.extension, it.listFiles()?.size
+        FileModel(it.path, FileType.getFileType(it), it.name,
+
+                if(FileType.getFileType(it) != FileType.FOLDER){
+                    convertFileSizeToMB(it.length())
+                }else{
+                    convertFileSizeToMB(getFolderSize(it))
+                },
+
+                it.extension, it.listFiles()?.size
                 ?: 0)
     }
 }
 
+fun getFolderSize(directory: File): Long {
+    var size_length = 0.toLong()
+    for (file in directory.listFiles()) {
+        if (file.isFile) size_length += file.length() else size_length += getFolderSize(file)
+    }
+    return size_length
+}
 fun getFilesFromPath(path: String, showHiddenFiles: Boolean = false, onlyFolders: Boolean = false): List<File> {
     val file = File(path)
     return file.listFiles()
