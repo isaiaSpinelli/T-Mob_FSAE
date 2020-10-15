@@ -1,0 +1,8 @@
+*.idea
+ListApplication/
+app/
+test1/
+
+*.idea/*
+TestPieChart/.idea/
+TestPieChart/.idea/*
