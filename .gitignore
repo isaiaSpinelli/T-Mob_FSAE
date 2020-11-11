@@ -1,6 +1,6 @@
 *.idea
 ListApplication/
-app/
+./app/
 test1/
 
 *.idea/*
