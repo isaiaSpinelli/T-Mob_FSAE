@@ -35,7 +35,6 @@ import launchFileIntent
 // http://thetechnocafe.com/build-a-file-explorer-in-kotlin-part-1-introduction-and-set-up/
 
 //TODO cacher l'option pour créer un fichier ou un dossier dans le mode PieChart
-//TODO return to current directory or root directory ? (update Breadcrumb bar )
 //TODO what to do when an element in PieChart is selected
 //TO KNOW: PieChart's Legend can't to have more X label entries ( X = different colors)
 class MainActivity : AppCompatActivity(), FilesListFragment.OnItemClickListener  {
@@ -123,9 +122,13 @@ class MainActivity : AppCompatActivity(), FilesListFragment.OnItemClickListener 
                 fab.setImageResource(R.drawable.ic_button_explorer);
 
                 //TODO return to current directory or root directory ?
-                //TODO update Breadcrumb bar (/ > DCIM ...)
-
-
+                // return to root directory
+                backStackManager.popFromStackTill(FileModel(
+                    Environment.getExternalStorageDirectory().absolutePath,
+                    FileType.FOLDER,
+                    "/",
+                    0.0
+                ))
 
             }
 
