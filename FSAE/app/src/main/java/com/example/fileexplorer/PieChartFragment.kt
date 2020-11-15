@@ -1,13 +1,11 @@
 package com.example.fileexplorer
 
+import FileModel
 import android.content.Context
 import android.graphics.Color
-import android.graphics.Typeface
 import android.os.Bundle
 import android.text.SpannableString
-import android.text.style.ForegroundColorSpan
 import android.text.style.RelativeSizeSpan
-import android.text.style.StyleSpan
 import android.view.LayoutInflater
 import android.view.View
 import android.view.ViewGroup
@@ -15,20 +13,34 @@ import android.widget.Toast
 import androidx.fragment.app.Fragment
 import com.github.mikephil.charting.charts.PieChart
 import com.github.mikephil.charting.components.Legend
-import com.github.mikephil.charting.data.Entry
-import com.github.mikephil.charting.data.PieData
-import com.github.mikephil.charting.data.PieDataSet
-import com.github.mikephil.charting.data.PieEntry
+import com.github.mikephil.charting.data.*
 import com.github.mikephil.charting.formatter.PercentFormatter
 import com.github.mikephil.charting.highlight.Highlight
 import com.github.mikephil.charting.listener.OnChartValueSelectedListener
 import com.github.mikephil.charting.utils.ColorTemplate
 
+//TODO Refactor gestion PieChart and legend
+//TODO maybe DataSet in variable class
+//TODO delete argument List between activity and Fragment
+//TODO check if is Files !!
 
 class PieChartFragment : Fragment(), OnChartValueSelectedListener {
 
+    private var path: String = ""
+    private var filesList: List<FileModel>? = null
     //private var mListener: Nothing?
     private var pieChart: PieChart? = null
+    internal lateinit var callback: OnHeadlineSelectedListener
+
+    fun setOnHeadlineSelectedListener(callback: OnHeadlineSelectedListener) {
+        this.callback = callback
+    }
+
+    // This interface can be implemented by the Activity, parent Fragment,
+    // or a separate test implementation.
+    interface OnHeadlineSelectedListener {
+        fun onArticleSelected(path: String): List<FileModel>
+    }
 
     override fun onCreateView(
         inflater: LayoutInflater,
@@ -46,10 +58,24 @@ class PieChartFragment : Fragment(), OnChartValueSelectedListener {
         // Ajoute les listener
         pieChart!!.setOnChartValueSelectedListener(this);
 
+        path = arguments!!.getString("path", "/") // /storage/emulated/0/
+        filesList = callback.onArticleSelected(path)
+        initDataPieChar(filesList!!)
+
+
+
+        return view;
+    }
+
+    private fun initDataPieChar(onArticleSelected: List<FileModel>) {
+
+
+
         // Offset de la légende
         pieChart!!.setExtraOffsets(0f, 0f, 0f, 0f);
 
         // get arguments (name et size )
+        //TODO DELETE
         val listNameFiles = arguments!!.getStringArrayList("listNameFiles")
         val listSizeFiles = arguments!!.getFloatArray("listSizeFiles")
 
@@ -61,11 +87,9 @@ class PieChartFragment : Fragment(), OnChartValueSelectedListener {
         // ----- AJOUT DES DONNEES -----
         val NoOfEmp = mutableListOf<PieEntry>()
 
-        var i = 0;
-        for (item in listNameFiles!!) {
-            NoOfEmp.add(PieEntry(listSizeFiles!!.get(i++), item))
+        for (file in onArticleSelected){
+            NoOfEmp.add(PieEntry(file.sizeInMB.toFloat(), file.name))
         }
-
 
         // ajout les données et le label
         var dataSet = PieDataSet(NoOfEmp, "Name directory")
@@ -96,8 +120,7 @@ class PieChartFragment : Fragment(), OnChartValueSelectedListener {
         dataSet.valueTextColor = Color.BLACK;
         dataSet.setYValuePosition(PieDataSet.ValuePosition.OUTSIDE_SLICE);
 
-        // Applique les données sur le Pie chart
-        pieChart!!.setData(data)
+
 
         // Crée les couleurs a utiliser
         // nombers of colors = max nombers entries (now = 5+5+4+5 = 19)
@@ -112,6 +135,8 @@ class PieChartFragment : Fragment(), OnChartValueSelectedListener {
         //dataSet.setColors(*ColorTemplate.COLORFUL_COLORS)
 
 
+        // Applique les données sur le Pie chart
+        pieChart!!.setData(data)
 
 
         // ----- INFORMATION SUR LE PIE CHART -----
@@ -178,8 +203,6 @@ class PieChartFragment : Fragment(), OnChartValueSelectedListener {
         l.setTextSize(18f);
 
         l.setEnabled(true);
-
-        return view;
     }
 
 
@@ -251,7 +274,13 @@ class PieChartFragment : Fragment(), OnChartValueSelectedListener {
         // Recuère la valeure de l'element (size)
         var size = h.y;
 
-        Toast.makeText(this.context, "Index = "+index.toString()+"\t\tval = "+size.toString(), Toast.LENGTH_LONG).show()
+        //TODO check if is Files !!
+        //callback.onArticleSelected(index.toInt())
+        path = filesList?.get(index.toInt())!!.path // path + "/storage/emulated/0/DCIM"
+        filesList = callback.onArticleSelected(path)
+        initDataPieChar(filesList!!)
+
+        //Toast.makeText(this.context, "Index = "+index.toString()+"\t\tval = "+size.toString(), Toast.LENGTH_LONG).show()
         //Toast.makeText(this, "onValueSelected fonction\n"+e.toString()+"\n"+h.toString()+"\nindex = "+index.toString()+"val = "+size.toString(), Toast.LENGTH_LONG).show()
 
     }

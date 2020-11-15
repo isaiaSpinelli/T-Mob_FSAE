@@ -17,6 +17,7 @@ import android.view.View
 import android.widget.Toast
 import androidx.appcompat.app.AppCompatActivity
 import androidx.core.app.ActivityCompat
+import androidx.fragment.app.Fragment
 import androidx.recyclerview.widget.LinearLayoutManager
 import com.example.fileexplorer.fileslist.FilesListFragment
 import com.example.fileexplorer.utils.BackStackManager
@@ -37,12 +38,30 @@ import launchFileIntent
 //TODO change application name from FileExplorer to FSAE
 //TODO what to do when an element in PieChart is selected
 //TO KNOW: PieChart's Legend can't to have more X label entries ( X = different colors)
-class MainActivity : AppCompatActivity(), FilesListFragment.OnItemClickListener  {
+class MainActivity : AppCompatActivity(), FilesListFragment.OnItemClickListener, PieChartFragment.OnHeadlineSelectedListener  {
 
     private lateinit var menu: Menu
     private val backStackManager = BackStackManager()
     private lateinit var mBreadcrumbRecyclerAdapter: BreadcrumbRecyclerAdapter
     private var viewFiles = true
+
+    override fun onAttachFragment(fragment: Fragment) {
+        if (fragment is PieChartFragment) {
+            fragment.setOnHeadlineSelectedListener(this)
+        }
+    }
+    //TODO change directory and data of PieChart
+    override fun onArticleSelected(path: String): List<FileModel> {
+        //Toast.makeText(this, "entry selected : $position", Toast.LENGTH_SHORT).show()
+        //val path = "/storage/emulated/0/DCIM" // this.mBreadcrumbRecyclerAdapter.files[this.mBreadcrumbRecyclerAdapter.files.size - 1].path
+        val files = getFileModelsFromFiles(getFilesFromPath(path))
+
+        // sort files
+        val filesSort = files.sortedByDescending { it.sizeInMB }
+
+        return filesSort
+
+    }
 
     companion object {
         private const val OPTIONS_DIALOG_TAG: String = "com.example.fileexplorer.options_dialog"
@@ -102,6 +121,7 @@ class MainActivity : AppCompatActivity(), FilesListFragment.OnItemClickListener 
                 val bundle = Bundle()
                 bundle.putStringArrayList("listNameFiles", ArrayList(nameFilesList))
                 bundle.putFloatArray("listSizeFiles", sizeFilesList)
+                bundle.putString("path", path)
 
                 // change button icon
                 fab.setImageResource(R.drawable.ic_button_piechart);
@@ -325,6 +345,7 @@ class MainActivity : AppCompatActivity(), FilesListFragment.OnItemClickListener 
         fragmentTransaction.addToBackStack(fileModel.path)
         fragmentTransaction.commit()
     }
+
 }
 
 
