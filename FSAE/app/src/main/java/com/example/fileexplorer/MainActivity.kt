@@ -37,7 +37,7 @@ import launchFileIntent
 //TODO cacher l'option pour créer un fichier ou un dossier dans le mode PieChart
 //TODO return to current directory or root directory ? (update Breadcrumb bar )
 //TODO what to do when an element in PieChart is selected
-//TODO PieChart's Legend can't to have more 10 lables...
+//TO KNOW: PieChart's Legend can't to have more X label entries ( X = different colors)
 class MainActivity : AppCompatActivity(), FilesListFragment.OnItemClickListener  {
 
     private val backStackManager = BackStackManager()

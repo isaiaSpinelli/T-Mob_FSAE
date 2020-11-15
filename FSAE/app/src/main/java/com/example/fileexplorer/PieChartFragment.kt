@@ -100,9 +100,12 @@ class PieChartFragment : Fragment(), OnChartValueSelectedListener {
         pieChart!!.setData(data)
 
         // Crée les couleurs a utiliser
+        // nombers of colors = max nombers entries (now = 5+5+4+5 = 19)
         val colors: ArrayList<Int> = ArrayList()
-        for (c in ColorTemplate.COLORFUL_COLORS) colors.add(c)
-        for (c in ColorTemplate.JOYFUL_COLORS) colors.add(c)
+        for (c in ColorTemplate.COLORFUL_COLORS) colors.add(c)  // 5
+        for (c in ColorTemplate.JOYFUL_COLORS) colors.add(c)    // 5
+        for (c in ColorTemplate.MATERIAL_COLORS) colors.add(c)  // 4
+        for (c in ColorTemplate.VORDIPLOM_COLORS) colors.add(c) // 5
         // Applique les couleurs
         dataSet.setColors(colors)
         //dataSet.setColors(*ColorTemplate.COLORFUL_COLORS)
