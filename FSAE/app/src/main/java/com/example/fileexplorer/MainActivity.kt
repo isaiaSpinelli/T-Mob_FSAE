@@ -34,11 +34,12 @@ import launchFileIntent
 // https://github.com/PhilJay/MPAndroidChart
 // http://thetechnocafe.com/build-a-file-explorer-in-kotlin-part-1-introduction-and-set-up/
 
-//TODO cacher l'option pour créer un fichier ou un dossier dans le mode PieChart
+//TODO change application name from FileExplorer to FSAE
 //TODO what to do when an element in PieChart is selected
 //TO KNOW: PieChart's Legend can't to have more X label entries ( X = different colors)
 class MainActivity : AppCompatActivity(), FilesListFragment.OnItemClickListener  {
 
+    private lateinit var menu: Menu
     private val backStackManager = BackStackManager()
     private lateinit var mBreadcrumbRecyclerAdapter: BreadcrumbRecyclerAdapter
     private var viewFiles = true
@@ -78,6 +79,8 @@ class MainActivity : AppCompatActivity(), FilesListFragment.OnItemClickListener 
 
         // press on flotting button (change mode : Explorer or PieChart)
         fab.setOnClickListener { view ->
+            // toggle visibility "add file/dir" menu
+            menu.setGroupVisible(R.id.overFlowItemsToHide, !viewFiles);
             // go to mode Pie Chart
             if (viewFiles){
                 viewFiles = false
@@ -217,6 +220,7 @@ class MainActivity : AppCompatActivity(), FilesListFragment.OnItemClickListener 
     override fun onCreateOptionsMenu(menu: Menu): Boolean {
         // Inflate the menu; this adds items to the action bar if it is present.
         menuInflater.inflate(R.menu.menu_main, menu)
+        this.menu = menu;
         return true
     }
 
@@ -225,6 +229,7 @@ class MainActivity : AppCompatActivity(), FilesListFragment.OnItemClickListener 
         // automatically handle clicks on the Home/Up button, so long
         // as you specify a parent activity in AndroidManifest.xml.
         when (item.itemId) {
+            //TODO implement setting
             R.id.action_settings -> true
             R.id.menuNewFile -> createNewFileInCurrentDirectory()
             R.id.menuNewFolder -> createNewFolderInCurrentDirectory()

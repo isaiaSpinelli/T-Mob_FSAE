@@ -3,25 +3,27 @@
     xmlns:tools="http://schemas.android.com/tools"
     tools:context="com.example.fileexplorer.MainActivity">
 
-    <item
-        android:id="@+id/subMenu"
-        android:icon="@drawable/ic_folder_grey_24dp"
-        android:title="Options"
-        app:showAsAction="always"
-        tools:ignore="AlwaysShowAction">
-        <menu>
-            <item
-                android:id="@+id/menuNewFile"
-                android:icon="@drawable/ic_insert_drive_file_grey_24dp"
-                android:title="New File"
-                app:showAsAction="never" />
-            <item
-                android:id="@+id/menuNewFolder"
-                android:icon="@drawable/ic_create_new_folder_grey_24dp"
-                android:title="New Folder"
-                app:showAsAction="never" />
-        </menu>
-    </item>
+    <group android:id="@+id/overFlowItemsToHide">
+        <item
+            android:id="@+id/subMenu"
+            android:icon="@drawable/ic_folder_grey_24dp"
+            android:title="Options"
+            app:showAsAction="always"
+            tools:ignore="AlwaysShowAction">
+            <menu>
+                <item
+                    android:id="@+id/menuNewFile"
+                    android:icon="@drawable/ic_insert_drive_file_grey_24dp"
+                    android:title="New File"
+                    app:showAsAction="never" />
+                <item
+                    android:id="@+id/menuNewFolder"
+                    android:icon="@drawable/ic_create_new_folder_grey_24dp"
+                    android:title="New Folder"
+                    app:showAsAction="never" />
+            </menu>
+        </item>
+    </group>
 
     <item
         android:id="@+id/action_settings"
