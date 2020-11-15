@@ -30,7 +30,6 @@ class PieChartFragment : Fragment(), OnChartValueSelectedListener {
     //private var mListener: Nothing?
     private var pieChart: PieChart? = null
 
-
     override fun onCreateView(
         inflater: LayoutInflater,
         container: ViewGroup?,
@@ -42,7 +41,6 @@ class PieChartFragment : Fragment(), OnChartValueSelectedListener {
             false
         )
 
-        //pieChart = view!!.findViewById<View>(com.example.fileexplorer.R.id.piechart) as PieChart
         pieChart = view.findViewById(com.example.fileexplorer.R.id.piechart)
 
         // Ajoute les listener
@@ -51,6 +49,7 @@ class PieChartFragment : Fragment(), OnChartValueSelectedListener {
         // Offset de la légende
         pieChart!!.setExtraOffsets(0f, 0f, 0f, 0f);
 
+        // get arguments (name et size )
         val listNameFiles = arguments!!.getStringArrayList("listNameFiles")
         val listSizeFiles = arguments!!.getFloatArray("listSizeFiles")
 
@@ -68,21 +67,8 @@ class PieChartFragment : Fragment(), OnChartValueSelectedListener {
         }
 
 
-
-/*
-
-        NoOfEmp.add(PieEntry(95f, "images"))
-        NoOfEmp.add(PieEntry(1040f, "telechargement"))
-        NoOfEmp.add(PieEntry(11303f, "rep3"))
-        NoOfEmp.add(PieEntry(1240f, "rep4"))
-        NoOfEmp.add(PieEntry(1369f, "rep5"))
-        NoOfEmp.add(PieEntry(1487f, "rep6"))
-        NoOfEmp.add(PieEntry(1501f, "rep7"))
-        NoOfEmp.add(PieEntry(1645f, "rep8"))
-        NoOfEmp.add(PieEntry(1578f, "rep9"))
-        NoOfEmp.add(PieEntry(1695f, "rep10"))*/
         // ajout les données et le label
-        val dataSet = PieDataSet(NoOfEmp, "Name directory")
+        var dataSet = PieDataSet(NoOfEmp, "Name directory")
         // ajoute un nombre après la virgule
         dataSet.setValueFormatter(PercentFormatter())
 
@@ -144,6 +130,8 @@ class PieChartFragment : Fragment(), OnChartValueSelectedListener {
 
         // Par défaut, affiche en pourcentage
         pieChart!!.setUsePercentValues(true);
+        // n'affiche pas les lables
+        pieChart!!.setDrawEntryLabels(false)
 
         // Gestion du texte du centre
         pieChart!!.setCenterText(generateCenterSpannableText());
@@ -160,7 +148,7 @@ class PieChartFragment : Fragment(), OnChartValueSelectedListener {
         val l: Legend = pieChart!!.getLegend()
         // Gère l'alignement
         l.setVerticalAlignment(Legend.LegendVerticalAlignment.TOP);
-        l.setHorizontalAlignment(Legend.LegendHorizontalAlignment.RIGHT);
+        l.setHorizontalAlignment(Legend.LegendHorizontalAlignment.LEFT);
         // Gère l'orientation
         l.setOrientation(Legend.LegendOrientation.HORIZONTAL);
 
@@ -177,8 +165,8 @@ class PieChartFragment : Fragment(), OnChartValueSelectedListener {
         //l.setYEntrySpace(10f);
 
         // offset de la légende
-        l.setYOffset(10f);
-        l.setXOffset(-18f);
+        //l.setYOffset(50f);
+        l.setXOffset(-50f);
 
         // Taille des icones de la légende
         l.setFormSize(18f);
@@ -202,12 +190,23 @@ class PieChartFragment : Fragment(), OnChartValueSelectedListener {
     private fun generateCenterSpannableText(): CharSequence? {
         //Toast.makeText(this, "generateCenterSpannableText fonction", Toast.LENGTH_LONG).show()
 
-        var directoryName = "Image";
 
-        val s = SpannableString("In directory\n" + directoryName)
-        s.setSpan(RelativeSizeSpan(1.5f), 13, 13 + directoryName.length, 0)
-        s.setSpan(StyleSpan(Typeface.ITALIC), s.length - 5, s.length, 0)
-        s.setSpan(ForegroundColorSpan(ColorTemplate.getHoloBlue()), s.length - 5, s.length, 0)
+        var s = SpannableString("[%]")
+
+        val text = pieChart!!.centerText.toString()
+        if (text.equals("[%]")){
+            s = SpannableString("[MB]")
+        }
+
+        s.setSpan(RelativeSizeSpan(2f), 0, s.length, 0)
+
+        // For display current Directory :
+        //var directoryName = "Image";
+        //val s = SpannableString("In directory\n" + directoryName)
+        //s.setSpan(RelativeSizeSpan(1.5f), 13, 13 + directoryName.length, 0)
+        //s.setSpan(RelativeSizeSpan(1.5f), 0, 4, 0)
+        //s.setSpan(StyleSpan(Typeface.ITALIC), s.length - 5, s.length, 0)
+        //s.setSpan(ForegroundColorSpan(ColorTemplate.getHoloBlue()), s.length - 5, s.length, 0)
         return s
     }
 
@@ -220,15 +219,14 @@ class PieChartFragment : Fragment(), OnChartValueSelectedListener {
 
 
 
+    // call upon the fragment is ready and displayed
     override fun onActivityCreated(savedInstanceState: Bundle?) {
         super.onActivityCreated(savedInstanceState)
-        // Appelée lorsque le fragment a fini d’initialiser et de dessiner son
-        //contenu.
     }
+    // Call upon the fragment is link with activity
     override fun onAttach(activity: Context) {
         super.onAttach(activity)
-        // Appelée lorsque l’on attache le fragment à son activité
-        // Permet de dialoguer avec l’activité
+
         try {
             //mListener = activity as OnFragmentInteractionListener
         } catch (e: ClassCastException) {
@@ -258,12 +256,15 @@ class PieChartFragment : Fragment(), OnChartValueSelectedListener {
         //Toast.makeText(this, "onNothingSelected fonction", Toast.LENGTH_LONG).show()
 
         // Toggle X (labels) valeur
-        pieChart?.setDrawEntryLabels(!pieChart!!.isDrawEntryLabelsEnabled());
-        pieChart?.invalidate();
+        //pieChart?.setDrawEntryLabels(!pieChart!!.isDrawEntryLabelsEnabled());
+        //pieChart?.invalidate();
 
         // Toggle pourcent mode (data)
         pieChart?.setUsePercentValues(!pieChart!!.isUsePercentValuesEnabled());
         pieChart?.invalidate();
+
+        pieChart!!.setCenterText(generateCenterSpannableText());
+
     }
 
 }

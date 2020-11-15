@@ -20,15 +20,18 @@ import androidx.core.app.ActivityCompat
 import androidx.recyclerview.widget.LinearLayoutManager
 import com.example.fileexplorer.fileslist.FilesListFragment
 import com.example.fileexplorer.utils.BackStackManager
-import com.example.fileexplorer.utils.FullscreenFragment
 import com.google.android.material.bottomsheet.BottomSheetDialog
 import createNewFile
 import createNewFolder
+import getFileModelsFromFiles
+import getFilesFromPath
 import kotlinx.android.synthetic.main.activity_main.*
 import kotlinx.android.synthetic.main.dialog_enter_name.view.*
 import launchFileIntent
 
-
+//TODO cacher l'option pour créer un fichier ou un dossier dans le mode PieChart
+//TODO Changer l'icon du bouton flotttant
+//TODO return to current directory or root directory ? (update Breadcrumb bar )
 class MainActivity : AppCompatActivity(), FilesListFragment.OnItemClickListener  {
 
     private val backStackManager = BackStackManager()
@@ -46,20 +49,17 @@ class MainActivity : AppCompatActivity(), FilesListFragment.OnItemClickListener 
         setContentView(R.layout.activity_main)
         setSupportActionBar(toolbar)
 
-
-        // Si les permissons ont déjà été acceptées
+        // Check permission
         if (setupPermissionsOK()){
             doInit()
         }
 
-
     }
 
-    // Initilise l'acticité principales
+    // Init main activity
     private fun doInit() {
 
         // create and display file list fragment
-
         val filesListFragment = FilesListFragment.build {
             path = Environment.getExternalStorageDirectory().absolutePath
         }
@@ -68,34 +68,34 @@ class MainActivity : AppCompatActivity(), FilesListFragment.OnItemClickListener 
             .addToBackStack(Environment.getExternalStorageDirectory().absolutePath)
             .commit()
 
-
-
         initViews()
         initBackStack()
 
-        // press on flotting button
+        // press on flotting button (change mode : Explorer or PieChart)
         fab.setOnClickListener { view ->
-            // go to see Pie Chart
+            // go to mode Pie Chart
             if (viewFiles){
                 viewFiles = false
 
-                //TODO Get file & directory name list
-                val nameFiles = mutableListOf("one", "two", "three", "four")
-
-
-                //TODO get files & directory size list
-                val size = FloatArray(nameFiles.size)
-
-                for (i in 1..nameFiles.size){
-                    size.set(i-1, 95f)
+                // Get list files and size from current directory
+                val path = this.mBreadcrumbRecyclerAdapter.files[this.mBreadcrumbRecyclerAdapter.files.size - 1].path
+                val files = getFileModelsFromFiles(getFilesFromPath(path))
+                val nameFilesList = mutableListOf<String>() // = mutableListOf("one", "two", "three", "four")
+                val sizeFilesList = FloatArray(files.size)
+                // sort files
+                val filesSort = files.sortedByDescending { it.sizeInMB }
+                var i = 0
+                for (nameFiles in filesSort){
+                    nameFilesList.add(nameFiles.name)
+                    sizeFilesList.set(i++, nameFiles.sizeInMB.toFloat())
                 }
 
+                // send list fils and site to PieChart
                 val bundle = Bundle()
-                bundle.putStringArrayList("listNameFiles", ArrayList(nameFiles))
-                //bundle.putStringArrayList("listNameFiles", nameFiles)
+                bundle.putStringArrayList("listNameFiles", ArrayList(nameFilesList))
+                bundle.putFloatArray("listSizeFiles", sizeFilesList)
 
-                bundle.putFloatArray("listSizeFiles", size)
-
+                // Enable mode PieChart
                 val PieChartFragment = PieChartFragment()
                 PieChartFragment.setArguments(bundle)
 
@@ -103,7 +103,7 @@ class MainActivity : AppCompatActivity(), FilesListFragment.OnItemClickListener 
                     .replace(R.id.container, PieChartFragment).addToBackStack("test")
                     .commit()
 
-            // return to see explorer files
+            // return to mode explorer files
             } else {
                 viewFiles = true
 
@@ -120,8 +120,8 @@ class MainActivity : AppCompatActivity(), FilesListFragment.OnItemClickListener 
         }
     }
 
-    // Setup les permissions
-    // Renvoie True si toutes les permissons sont bonnes
+    // Setup permissons
+    // return true if all permissons are accepts
     private fun setupPermissionsOK(): Boolean {
         var ret = true;
         val PERMISSION_ALL = 1
@@ -136,7 +136,7 @@ class MainActivity : AppCompatActivity(), FilesListFragment.OnItemClickListener 
         return ret
     }
 
-    // Appeler lors de la réponse aux demanddes des permissons
+    // Call upon get answer permissons
     override fun onRequestPermissionsResult(
         requestCode: Int, permissions: Array<String>,
         grantResults: IntArray
@@ -157,7 +157,7 @@ class MainActivity : AppCompatActivity(), FilesListFragment.OnItemClickListener 
         }
     }
 
-    // Check si toutes les permissons sont acceptées
+    // Check if all permissons are accept
     fun hasPermissions(context: Context, vararg permissions: String): Boolean =
         permissions.all {
             ActivityCompat.checkSelfPermission(context, it) == PackageManager.PERMISSION_GRANTED
@@ -173,13 +173,7 @@ class MainActivity : AppCompatActivity(), FilesListFragment.OnItemClickListener 
         mBreadcrumbRecyclerAdapter.onItemClickListener = {
             supportFragmentManager.popBackStack(it.path, 2);
             backStackManager.popFromStackTill(it)
-
             viewFiles = true
-           /* supportFragmentManager.beginTransaction()
-                .replace(R.id.container, filesListFragment).addToBackStack(Environment.getExternalStorageDirectory().absolutePath)
-                .commit()*/
-
-
         }
     }
 
@@ -285,7 +279,6 @@ class MainActivity : AppCompatActivity(), FilesListFragment.OnItemClickListener 
             FileUtilsDeleteFile(fileModel.path)
             updateContentOfCurrentFragment()
         }
-
 
         optionsDialog.show(supportFragmentManager, OPTIONS_DIALOG_TAG)
     }
