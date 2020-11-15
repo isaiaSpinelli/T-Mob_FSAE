@@ -29,9 +29,15 @@ import kotlinx.android.synthetic.main.activity_main.*
 import kotlinx.android.synthetic.main.dialog_enter_name.view.*
 import launchFileIntent
 
+
+// Sources :
+// https://github.com/PhilJay/MPAndroidChart
+// http://thetechnocafe.com/build-a-file-explorer-in-kotlin-part-1-introduction-and-set-up/
+
 //TODO cacher l'option pour créer un fichier ou un dossier dans le mode PieChart
-//TODO Changer l'icon du bouton flotttant
 //TODO return to current directory or root directory ? (update Breadcrumb bar )
+//TODO what to do when an element in PieChart is selected
+//TODO PieChart's Legend can't to have more 10 lables...
 class MainActivity : AppCompatActivity(), FilesListFragment.OnItemClickListener  {
 
     private val backStackManager = BackStackManager()
@@ -95,6 +101,9 @@ class MainActivity : AppCompatActivity(), FilesListFragment.OnItemClickListener 
                 bundle.putStringArrayList("listNameFiles", ArrayList(nameFilesList))
                 bundle.putFloatArray("listSizeFiles", sizeFilesList)
 
+                // change button icon
+                fab.setImageResource(R.drawable.ic_button_piechart);
+
                 // Enable mode PieChart
                 val PieChartFragment = PieChartFragment()
                 PieChartFragment.setArguments(bundle)
@@ -110,9 +119,12 @@ class MainActivity : AppCompatActivity(), FilesListFragment.OnItemClickListener 
                 supportFragmentManager.beginTransaction()
                     .replace(R.id.container, filesListFragment).addToBackStack(Environment.getExternalStorageDirectory().absolutePath)
                     .commit()
+                // change button icon
+                fab.setImageResource(R.drawable.ic_button_explorer);
 
                 //TODO return to current directory or root directory ?
                 //TODO update Breadcrumb bar (/ > DCIM ...)
+
 
 
             }
