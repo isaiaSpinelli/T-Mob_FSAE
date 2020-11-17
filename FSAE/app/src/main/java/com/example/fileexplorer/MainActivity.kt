@@ -39,10 +39,8 @@ import launchFileIntent
 //TODO Refactor gestion PieChart and legend (maybe DataSet in variable class)
 //TODO when PieChart display with 0 element (add notif more clearly)
 //TODO when PieChart display with elements empty
-//TODO when selct a item : 1. check if is Files !! 2. update Breadcrumb
+//TODO bug when click on breadcrum build with piaChart
 
-//TODO bug display menu add files/folder when come back with Breadcrumb DONE
-//TODO delete argument List between activity and Fragment DONE
 
 //TO KNOW: PieChart's Legend can't to have more X label entries ( X = different colors)
 class MainActivity : AppCompatActivity(), FilesListFragment.OnItemClickListener, PieChartFragment.OnHeadlineSelectedListener  {
@@ -62,15 +60,24 @@ class MainActivity : AppCompatActivity(), FilesListFragment.OnItemClickListener,
     override fun onArticleSelected(path: String): List<FileModel> {
         val files = getFileModelsFromFiles(getFilesFromPath(path))
 
-        //TODO check if is Files !!
-
-        //TODO update Breadcrumb
-
         // sort files
         val filesSort = files.sortedByDescending { it.sizeInMB }
 
         return filesSort
 
+    }
+
+    // update the back stack
+    override fun updateBackStack(path: String, name: String) {
+        //backStackManager.addToStack(fileModel)
+        var fileModel = FileModel(
+            path,
+            FileType.FOLDER,
+            name,
+            0.0
+        )
+
+        backStackManager.addToStack(fileModel)
     }
 
     companion object {

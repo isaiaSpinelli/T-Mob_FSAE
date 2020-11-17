@@ -7,9 +7,9 @@ import android.os.Bundle
 import android.text.SpannableString
 import android.text.style.RelativeSizeSpan
 import android.view.LayoutInflater
+import android.view.MotionEvent
 import android.view.View
 import android.view.ViewGroup
-import android.widget.Toast
 import androidx.fragment.app.Fragment
 import com.github.mikephil.charting.charts.PieChart
 import com.github.mikephil.charting.components.Legend
@@ -17,6 +17,7 @@ import com.github.mikephil.charting.data.*
 import com.github.mikephil.charting.formatter.PercentFormatter
 import com.github.mikephil.charting.highlight.Highlight
 import com.github.mikephil.charting.listener.OnChartValueSelectedListener
+import com.github.mikephil.charting.listener.PieRadarChartTouchListener
 import com.github.mikephil.charting.utils.ColorTemplate
 
 
@@ -34,6 +35,7 @@ class PieChartFragment : Fragment(), OnChartValueSelectedListener {
     // interface implemented by MainActivity
     interface OnHeadlineSelectedListener {
         fun onArticleSelected(path: String): List<FileModel>
+        fun updateBackStack(path: String, name: String)
     }
 
     override fun onCreateView(
@@ -57,6 +59,23 @@ class PieChartFragment : Fragment(), OnChartValueSelectedListener {
         filesList = callback.onArticleSelected(path)
         initDataPieChar(filesList!!)
 
+        // when the PieChart is clicked
+        pieChart!!.onTouchListener = object : PieRadarChartTouchListener(pieChart){
+            override fun onSingleTapUp(e: MotionEvent?): Boolean {
+
+                // Toggle pourcent mode (data)
+                pieChart?.setUsePercentValues(!pieChart!!.isUsePercentValuesEnabled());
+                pieChart?.invalidate();
+
+                // update center text
+                pieChart!!.setCenterText(generateCenterSpannableText());
+
+                // if a entry is clieck, call onValueSelected
+                super.onSingleTapUp(e)
+                return super.onSingleTapUp(e)
+            }
+        }
+
 
         return view;
     }
@@ -78,7 +97,6 @@ class PieChartFragment : Fragment(), OnChartValueSelectedListener {
         var dataSet = PieDataSet(NoOfEmp, "Name directory")
         // ajoute un nombre après la virgule
         dataSet.setValueFormatter(PercentFormatter())
-
 
         // Crée le PieData
         val data = PieData(dataSet)
@@ -199,11 +217,11 @@ class PieChartFragment : Fragment(), OnChartValueSelectedListener {
     // Gère le texte au centre du PIE chart
     private fun generateCenterSpannableText(): CharSequence? {
         // Display % or MB
-        var s = SpannableString("[%]")
-        val text = pieChart!!.centerText.toString()
-        if (text.equals("[%]")){
+        var s = SpannableString("")
+        if ( !pieChart!!.isUsePercentValuesEnabled)
             s = SpannableString("[MB]")
-        }
+        else
+            s = SpannableString("[%]")
 
         s.setSpan(RelativeSizeSpan(2f), 0, s.length, 0)
 
@@ -246,35 +264,44 @@ class PieChartFragment : Fragment(), OnChartValueSelectedListener {
         super.onDetach()
     }
 
+
     override fun onValueSelected(e: Entry?, h: Highlight?) {
+
         // Recupère l'index de l'element selectionné
         var index = h!!.x;
         // Recuère la valeure de l'element (size)
         var size = h.y;
 
-        //TODO check if is Files !!
-        //callback.onArticleSelected(index.toInt())
-        path = filesList?.get(index.toInt())!!.path // path + "/storage/emulated/0/DCIM"
-        filesList = callback.onArticleSelected(path)
-        initDataPieChar(filesList!!)
+        if (filesList?.get(index.toInt())!!.fileType.equals(FileType.FILE)) {
+            var ms = 32
+            //TODO is a file.. so we can't go inside (make a notif)
+        } else {
+            // update stack and data
+            path = filesList?.get(index.toInt())!!.path // path + "/storage/emulated/0/DCIM"
+            //TODO update better cause click on name don t work
+            callback.updateBackStack(path, filesList?.get(index.toInt())!!.name)
+            filesList = callback.onArticleSelected(path)
+            initDataPieChar(filesList!!)
 
-        //TODO unselected entry
+            // unselect entry
+
+
+            // update center text
+            //pieChart!!.setCenterText(generateCenterSpannableText());
+
+        }
+
+
+
+
 
     }
 
-    // TODO call when a entry is selected ...
+    // TODO delete
     override fun onNothingSelected() {
         // Toggle X (labels) valeur
         //pieChart?.setDrawEntryLabels(!pieChart!!.isDrawEntryLabelsEnabled());
         //pieChart?.invalidate();
-
-        // Toggle pourcent mode (data)
-        pieChart?.setUsePercentValues(!pieChart!!.isUsePercentValuesEnabled());
-        pieChart?.invalidate();
-
-        // update center text
-        pieChart!!.setCenterText(generateCenterSpannableText());
-
     }
 
 }
