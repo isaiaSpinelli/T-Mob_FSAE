@@ -19,16 +19,11 @@ import com.github.mikephil.charting.highlight.Highlight
 import com.github.mikephil.charting.listener.OnChartValueSelectedListener
 import com.github.mikephil.charting.utils.ColorTemplate
 
-//TODO Refactor gestion PieChart and legend
-//TODO maybe DataSet in variable class
-//TODO delete argument List between activity and Fragment
-//TODO check if is Files !!
 
 class PieChartFragment : Fragment(), OnChartValueSelectedListener {
 
     private var path: String = ""
     private var filesList: List<FileModel>? = null
-    //private var mListener: Nothing?
     private var pieChart: PieChart? = null
     internal lateinit var callback: OnHeadlineSelectedListener
 
@@ -36,8 +31,7 @@ class PieChartFragment : Fragment(), OnChartValueSelectedListener {
         this.callback = callback
     }
 
-    // This interface can be implemented by the Activity, parent Fragment,
-    // or a separate test implementation.
+    // interface implemented by MainActivity
     interface OnHeadlineSelectedListener {
         fun onArticleSelected(path: String): List<FileModel>
     }
@@ -58,10 +52,10 @@ class PieChartFragment : Fragment(), OnChartValueSelectedListener {
         // Ajoute les listener
         pieChart!!.setOnChartValueSelectedListener(this);
 
+        // get path et files
         path = arguments!!.getString("path", "/") // /storage/emulated/0/
         filesList = callback.onArticleSelected(path)
         initDataPieChar(filesList!!)
-
 
 
         return view;
@@ -69,20 +63,9 @@ class PieChartFragment : Fragment(), OnChartValueSelectedListener {
 
     private fun initDataPieChar(onArticleSelected: List<FileModel>) {
 
-
-
         // Offset de la légende
         pieChart!!.setExtraOffsets(0f, 0f, 0f, 0f);
 
-        // get arguments (name et size )
-        //TODO DELETE
-        val listNameFiles = arguments!!.getStringArrayList("listNameFiles")
-        val listSizeFiles = arguments!!.getFloatArray("listSizeFiles")
-
-        if ( listNameFiles.isNullOrEmpty() ){
-            //TODO
-            Toast.makeText(this.context, "There isn't files or directory here", Toast.LENGTH_LONG).show()
-        }
 
         // ----- AJOUT DES DONNEES -----
         val NoOfEmp = mutableListOf<PieEntry>()
@@ -215,11 +198,8 @@ class PieChartFragment : Fragment(), OnChartValueSelectedListener {
 
     // Gère le texte au centre du PIE chart
     private fun generateCenterSpannableText(): CharSequence? {
-        //Toast.makeText(this, "generateCenterSpannableText fonction", Toast.LENGTH_LONG).show()
-
-
+        // Display % or MB
         var s = SpannableString("[%]")
-
         val text = pieChart!!.centerText.toString()
         if (text.equals("[%]")){
             s = SpannableString("[MB]")
@@ -227,7 +207,7 @@ class PieChartFragment : Fragment(), OnChartValueSelectedListener {
 
         s.setSpan(RelativeSizeSpan(2f), 0, s.length, 0)
 
-        // For display current Directory :
+        // Display current Directory :
         //var directoryName = "Image";
         //val s = SpannableString("In directory\n" + directoryName)
         //s.setSpan(RelativeSizeSpan(1.5f), 13, 13 + directoryName.length, 0)
@@ -238,7 +218,6 @@ class PieChartFragment : Fragment(), OnChartValueSelectedListener {
     }
 
     companion object {
-
         fun newInstance(): PieChartFragment {
             return PieChartFragment()
         }
@@ -265,7 +244,6 @@ class PieChartFragment : Fragment(), OnChartValueSelectedListener {
     }
     override fun onDetach() {
         super.onDetach()
-        //mListener = null
     }
 
     override fun onValueSelected(e: Entry?, h: Highlight?) {
@@ -280,14 +258,12 @@ class PieChartFragment : Fragment(), OnChartValueSelectedListener {
         filesList = callback.onArticleSelected(path)
         initDataPieChar(filesList!!)
 
-        //Toast.makeText(this.context, "Index = "+index.toString()+"\t\tval = "+size.toString(), Toast.LENGTH_LONG).show()
-        //Toast.makeText(this, "onValueSelected fonction\n"+e.toString()+"\n"+h.toString()+"\nindex = "+index.toString()+"val = "+size.toString(), Toast.LENGTH_LONG).show()
+        //TODO unselected entry
 
     }
 
+    // TODO call when a entry is selected ...
     override fun onNothingSelected() {
-        //Toast.makeText(this, "onNothingSelected fonction", Toast.LENGTH_LONG).show()
-
         // Toggle X (labels) valeur
         //pieChart?.setDrawEntryLabels(!pieChart!!.isDrawEntryLabelsEnabled());
         //pieChart?.invalidate();
@@ -296,6 +272,7 @@ class PieChartFragment : Fragment(), OnChartValueSelectedListener {
         pieChart?.setUsePercentValues(!pieChart!!.isUsePercentValuesEnabled());
         pieChart?.invalidate();
 
+        // update center text
         pieChart!!.setCenterText(generateCenterSpannableText());
 
     }

@@ -36,10 +36,18 @@ import launchFileIntent
 // http://thetechnocafe.com/build-a-file-explorer-in-kotlin-part-1-introduction-and-set-up/
 
 //TODO change application name from FileExplorer to FSAE
-//TODO what to do when an element in PieChart is selected
+//TODO Refactor gestion PieChart and legend (maybe DataSet in variable class)
+//TODO when PieChart display with 0 element (add notif more clearly)
+//TODO when PieChart display with elements empty
+//TODO when selct a item : 1. check if is Files !! 2. update Breadcrumb
+
+//TODO bug display menu add files/folder when come back with Breadcrumb DONE
+//TODO delete argument List between activity and Fragment DONE
+
 //TO KNOW: PieChart's Legend can't to have more X label entries ( X = different colors)
 class MainActivity : AppCompatActivity(), FilesListFragment.OnItemClickListener, PieChartFragment.OnHeadlineSelectedListener  {
 
+    private lateinit var filesListFragment: FilesListFragment
     private lateinit var menu: Menu
     private val backStackManager = BackStackManager()
     private lateinit var mBreadcrumbRecyclerAdapter: BreadcrumbRecyclerAdapter
@@ -50,11 +58,13 @@ class MainActivity : AppCompatActivity(), FilesListFragment.OnItemClickListener,
             fragment.setOnHeadlineSelectedListener(this)
         }
     }
-    //TODO change directory and data of PieChart
+
     override fun onArticleSelected(path: String): List<FileModel> {
-        //Toast.makeText(this, "entry selected : $position", Toast.LENGTH_SHORT).show()
-        //val path = "/storage/emulated/0/DCIM" // this.mBreadcrumbRecyclerAdapter.files[this.mBreadcrumbRecyclerAdapter.files.size - 1].path
         val files = getFileModelsFromFiles(getFilesFromPath(path))
+
+        //TODO check if is Files !!
+
+        //TODO update Breadcrumb
 
         // sort files
         val filesSort = files.sortedByDescending { it.sizeInMB }
@@ -85,7 +95,7 @@ class MainActivity : AppCompatActivity(), FilesListFragment.OnItemClickListener,
     private fun doInit() {
 
         // create and display file list fragment
-        val filesListFragment = FilesListFragment.build {
+        filesListFragment = FilesListFragment.build {
             path = Environment.getExternalStorageDirectory().absolutePath
         }
         supportFragmentManager.beginTransaction()
@@ -106,21 +116,9 @@ class MainActivity : AppCompatActivity(), FilesListFragment.OnItemClickListener,
 
                 // Get list files and size from current directory
                 val path = this.mBreadcrumbRecyclerAdapter.files[this.mBreadcrumbRecyclerAdapter.files.size - 1].path
-                val files = getFileModelsFromFiles(getFilesFromPath(path))
-                val nameFilesList = mutableListOf<String>() // = mutableListOf("one", "two", "three", "four")
-                val sizeFilesList = FloatArray(files.size)
-                // sort files
-                val filesSort = files.sortedByDescending { it.sizeInMB }
-                var i = 0
-                for (nameFiles in filesSort){
-                    nameFilesList.add(nameFiles.name)
-                    sizeFilesList.set(i++, nameFiles.sizeInMB.toFloat())
-                }
 
-                // send list fils and site to PieChart
+                // send path to PieChart
                 val bundle = Bundle()
-                bundle.putStringArrayList("listNameFiles", ArrayList(nameFilesList))
-                bundle.putFloatArray("listSizeFiles", sizeFilesList)
                 bundle.putString("path", path)
 
                 // change button icon
@@ -138,14 +136,15 @@ class MainActivity : AppCompatActivity(), FilesListFragment.OnItemClickListener,
             } else {
                 viewFiles = true
 
+                // change fragment
                 supportFragmentManager.beginTransaction()
                     .replace(R.id.container, filesListFragment).addToBackStack(Environment.getExternalStorageDirectory().absolutePath)
                     .commit()
+
                 // change button icon
                 fab.setImageResource(R.drawable.ic_button_explorer);
 
-                //TODO return to current directory or root directory ?
-                // return to root directory
+                // update stack manager
                 backStackManager.popFromStackTill(FileModel(
                     Environment.getExternalStorageDirectory().absolutePath,
                     FileType.FOLDER,
@@ -218,6 +217,11 @@ class MainActivity : AppCompatActivity(), FilesListFragment.OnItemClickListener,
     private fun initBackStack() {
         backStackManager.onStackChangeListener = {
             updateAdapterData(it)
+            // if we need to change view PieChart To File list
+            if (!viewFiles){
+                PieChartToFileList();
+            }
+
         }
 
         backStackManager.addToStack(
@@ -228,6 +232,21 @@ class MainActivity : AppCompatActivity(), FilesListFragment.OnItemClickListener,
                 0.0
             )
         )
+    }
+
+    // Switch view from PieChart to Files list
+    private fun PieChartToFileList() {
+        viewFiles = true
+
+        // set visibility "add file/dir" menu
+        menu.setGroupVisible(R.id.overFlowItemsToHide, viewFiles);
+
+        // change fragment
+        supportFragmentManager.beginTransaction()
+            .replace(R.id.container, filesListFragment)
+        // change button icon
+        fab.setImageResource(R.drawable.ic_button_explorer);
+
     }
 
     private fun updateAdapterData(files: List<FileModel>) {
