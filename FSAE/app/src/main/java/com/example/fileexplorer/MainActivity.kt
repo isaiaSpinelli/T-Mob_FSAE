@@ -28,14 +28,15 @@ import getFileModelsFromFiles
 import getFilesFromPath
 import kotlinx.android.synthetic.main.activity_main.*
 import kotlinx.android.synthetic.main.dialog_enter_name.view.*
+import kotlinx.coroutines.GlobalScope
+import kotlinx.coroutines.delay
+import kotlinx.coroutines.launch
 import launchFileIntent
-
 
 // Sources :
 // https://github.com/PhilJay/MPAndroidChart
 // http://thetechnocafe.com/build-a-file-explorer-in-kotlin-part-1-introduction-and-set-up/
 
-//TODO don t display BreadcrumbRecycler when lauch app fisrt time
 //TODO Refactor gestion PieChart and legend (maybe DataSet in variable class)
 //TODO when PieChart display with 0 element (add notif more clearly)
 //TODO when PieChart display with elements empty
@@ -43,12 +44,14 @@ import launchFileIntent
 //TO KNOW: PieChart's Legend can't to have more X label entries ( X = different colors)
 class MainActivity : AppCompatActivity(), FilesListFragment.OnItemClickListener, PieChartFragment.OnHeadlineSelectedListener  {
 
+    private var notAllowed = true
     private lateinit var filesListFragment: FilesListFragment
     private lateinit var menu: Menu
     private val backStackManager = BackStackManager()
     private lateinit var mBreadcrumbRecyclerAdapter: BreadcrumbRecyclerAdapter
     private var viewFiles = true
 
+    // Link callbacks for PieChart Fragment
     override fun onAttachFragment(fragment: Fragment) {
         if (fragment is PieChartFragment) {
             fragment.setOnHeadlineSelectedListener(this)
@@ -58,7 +61,6 @@ class MainActivity : AppCompatActivity(), FilesListFragment.OnItemClickListener,
     // Get files sorted for a path of entry selected
     override fun onArticleSelected(path: String): List<FileModel> {
         val files = getFileModelsFromFiles(getFilesFromPath(path))
-
         // sort files
         val filesSort = files.sortedByDescending { it.sizeInMB }
 
@@ -66,7 +68,7 @@ class MainActivity : AppCompatActivity(), FilesListFragment.OnItemClickListener,
 
     }
 
-    // update the back stack
+    // update the back stack from the PieChart
     override fun updateBackStack(fileModel: FileModel?) {
         if (fileModel != null) {
             backStackManager.addToStack(fileModel)
@@ -85,10 +87,15 @@ class MainActivity : AppCompatActivity(), FilesListFragment.OnItemClickListener,
         setSupportActionBar(toolbar)
 
         // Check permission
-        if (setupPermissionsOK()){
+        notAllowed = !setupPermissionsOK()
+
+        // launch a new coroutine in background and continue, allow to catch answer for permissons
+        GlobalScope.launch {
+            while(notAllowed){
+                delay(100)
+            }
             doInit()
         }
-
     }
 
     // Call upon get answer permissons
@@ -98,12 +105,14 @@ class MainActivity : AppCompatActivity(), FilesListFragment.OnItemClickListener,
     ) {
         when (requestCode) {
             1 -> {
+                // Permisson accepted
                 if (grantResults.size == 2 &&
                     grantResults[0] == PackageManager.PERMISSION_GRANTED &&
                     grantResults[1] == PackageManager.PERMISSION_GRANTED
                 ) {
-                    //TODO call here don t display BreadcrumbRecycler
-                    doInit()
+                    notAllowed = false
+
+                // Permisson denied
                 } else {
                     Toast.makeText(this, "Permission Denied", Toast.LENGTH_SHORT).show()
                     finish()
@@ -113,7 +122,7 @@ class MainActivity : AppCompatActivity(), FilesListFragment.OnItemClickListener,
         }
     }
 
-    // Init main activity
+    // Initialize main activity
     private fun doInit() {
 
         // create and display file list fragment
@@ -156,22 +165,47 @@ class MainActivity : AppCompatActivity(), FilesListFragment.OnItemClickListener,
             } else {
                 PieChartToFileList()
 
-                // change fragment
-                supportFragmentManager.beginTransaction()
-                    .replace(R.id.container, filesListFragment).addToBackStack(Environment.getExternalStorageDirectory().absolutePath)
-                    .commit()
-
-                // update stack manager
-                backStackManager.popFromStackTill(FileModel(
+                var rootFile = FileModel(
                     Environment.getExternalStorageDirectory().absolutePath,
                     FileType.FOLDER,
                     "/",
                     0.0
-                ))
+                )
+
+                displayFileListFrom(rootFile)
+
             }
         }
     }
 
+    // display the list of files from a FileModel
+    private fun displayFileListFrom(fileFrom: FileModel) {
+        // update files list
+        filesListFragment = FilesListFragment.build {
+            path = fileFrom.path
+        }
+
+        // change fragment
+        supportFragmentManager.beginTransaction()
+            .replace(R.id.container, filesListFragment).addToBackStack(fileFrom.path)
+            .commit()
+
+        // update stack manager
+        backStackManager.popFromStackTill(fileFrom)
+    }
+    // add a depth in current directory
+    private fun addFileFragment(fileModel: FileModel) {
+        val filesListFragment = FilesListFragment.build {
+            path = fileModel.path
+        }
+
+        backStackManager.addToStack(fileModel)
+
+        val fragmentTransaction = supportFragmentManager.beginTransaction()
+        fragmentTransaction.replace(R.id.container, filesListFragment)
+        fragmentTransaction.addToBackStack(fileModel.path)
+        fragmentTransaction.commit()
+    }
 
 
     // Setup permissons
@@ -198,8 +232,10 @@ class MainActivity : AppCompatActivity(), FilesListFragment.OnItemClickListener,
             ActivityCompat.checkSelfPermission(context, it) == PackageManager.PERMISSION_GRANTED
         }
 
+    // initialize view
     private fun initViews() {
         setSupportActionBar(toolbar)
+        // initialize breadcrumb
         breadcrumbRecyclerView.layoutManager =
             LinearLayoutManager(this, LinearLayoutManager.HORIZONTAL, false)
         mBreadcrumbRecyclerAdapter = BreadcrumbRecyclerAdapter()
@@ -212,27 +248,19 @@ class MainActivity : AppCompatActivity(), FilesListFragment.OnItemClickListener,
            if (viewFiles == false){
                PieChartToFileList()
             }
-
-            // update files list of entry choice //supportFragmentManager.popBackStack(it.path, 2);
-            filesListFragment = FilesListFragment.build {
-                path = it.path
-            }
-            supportFragmentManager.beginTransaction()
-                .replace(R.id.container, filesListFragment)
-                .addToBackStack(it.path)
-                .commit()
-
-            // update stack top design
-            backStackManager.popFromStackTill(it)
-
+            displayFileListFrom(it)
         }
     }
 
+    // initialize back stack
     private fun initBackStack() {
+
+        // for update bach stack
         backStackManager.onStackChangeListener = {
             updateAdapterData(it)
         }
 
+        // initialize back stack with root directory
         backStackManager.addToStack(
             fileModel = FileModel(
                 Environment.getExternalStorageDirectory().absolutePath,
@@ -260,6 +288,7 @@ class MainActivity : AppCompatActivity(), FilesListFragment.OnItemClickListener,
         fab.setImageResource(R.drawable.ic_button_piechart);
     }
 
+    // update data bread crumb
     private fun updateAdapterData(files: List<FileModel>) {
         mBreadcrumbRecyclerAdapter.updateData(files)
         if (files.isNotEmpty()) {
@@ -267,17 +296,15 @@ class MainActivity : AppCompatActivity(), FilesListFragment.OnItemClickListener,
         }
     }
 
+    // Initialize menu
     override fun onCreateOptionsMenu(menu: Menu): Boolean {
-        // Inflate the menu; this adds items to the action bar if it is present.
         menuInflater.inflate(R.menu.menu_main, menu)
         this.menu = menu;
         return true
     }
 
+    // Handle action bar item clicks here
     override fun onOptionsItemSelected(item: MenuItem): Boolean {
-        // Handle action bar item clicks here. The action bar will
-        // automatically handle clicks on the Home/Up button, so long
-        // as you specify a parent activity in AndroidManifest.xml.
         when (item.itemId) {
             //TODO implement setting
             R.id.action_settings -> true
@@ -285,10 +312,10 @@ class MainActivity : AppCompatActivity(), FilesListFragment.OnItemClickListener,
             R.id.menuNewFolder -> createNewFolderInCurrentDirectory()
             //else -> super.onOptionsItemSelected(item)
         }
-
         return super.onOptionsItemSelected(item)
     }
 
+    // create a new File in current Dir
     private fun createNewFileInCurrentDirectory() {
         val bottomSheetDialog = BottomSheetDialog(this)
         val view = LayoutInflater.from(this).inflate(R.layout.dialog_enter_name, null)
@@ -306,6 +333,7 @@ class MainActivity : AppCompatActivity(), FilesListFragment.OnItemClickListener,
         bottomSheetDialog.show()
     }
 
+    // create a new folder in current Dir
     private fun createNewFolderInCurrentDirectory() {
         val bottomSheetDialog = BottomSheetDialog(this)
         val view = LayoutInflater.from(this).inflate(R.layout.dialog_enter_name, null)
@@ -323,6 +351,7 @@ class MainActivity : AppCompatActivity(), FilesListFragment.OnItemClickListener,
         bottomSheetDialog.show()
     }
 
+    // update content of fragment
     private fun updateContentOfCurrentFragment() {
         val broadcastIntent = Intent()
         broadcastIntent.action = applicationContext.getString(R.string.file_change_broadcast)
@@ -333,6 +362,7 @@ class MainActivity : AppCompatActivity(), FilesListFragment.OnItemClickListener,
         sendBroadcast(broadcastIntent)
     }
 
+    // Click on file/filder list
     override fun onClick(fileModel: FileModel) {
         if (fileModel.fileType == FileType.FOLDER) {
             addFileFragment(fileModel)
@@ -341,19 +371,19 @@ class MainActivity : AppCompatActivity(), FilesListFragment.OnItemClickListener,
         }
     }
 
+    // lonf click on file/filder list
     override fun onLongClick(fileModel: FileModel) {
-
+        // ask for delete
         val optionsDialog = FileOptionsDialog.build {}
-
         optionsDialog.onDeleteClickListener = {
             FileUtilsDeleteFile(fileModel.path)
             updateContentOfCurrentFragment()
         }
-
         optionsDialog.show(supportFragmentManager, OPTIONS_DIALOG_TAG)
     }
 
 
+    // TODO delete
     override fun onBackPressed() {
         super.onBackPressed()
         backStackManager.popFromStack()
@@ -363,18 +393,7 @@ class MainActivity : AppCompatActivity(), FilesListFragment.OnItemClickListener,
         }
     }
 
-    private fun addFileFragment(fileModel: FileModel) {
-        val filesListFragment = FilesListFragment.build {
-            path = fileModel.path
-        }
 
-        backStackManager.addToStack(fileModel)
-
-        val fragmentTransaction = supportFragmentManager.beginTransaction()
-        fragmentTransaction.replace(R.id.container, filesListFragment)
-        fragmentTransaction.addToBackStack(fileModel.path)
-        fragmentTransaction.commit()
-    }
 
 }
 

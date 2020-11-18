@@ -10,6 +10,7 @@ import android.view.LayoutInflater
 import android.view.MotionEvent
 import android.view.View
 import android.view.ViewGroup
+import android.widget.Toast
 import androidx.fragment.app.Fragment
 import com.github.mikephil.charting.charts.PieChart
 import com.github.mikephil.charting.components.Legend
@@ -29,16 +30,37 @@ class PieChartFragment : Fragment(), OnChartValueSelectedListener {
     private var pieChart: PieChart? = null
     internal lateinit var callback: OnHeadlineSelectedListener
 
+    // allow to link callback with activity
     fun setOnHeadlineSelectedListener(callback: OnHeadlineSelectedListener) {
         this.callback = callback
     }
 
-    // interface implemented by MainActivity
+    // interface implemented by Activity
     interface OnHeadlineSelectedListener {
         fun onArticleSelected(path: String): List<FileModel>
         fun updateBackStack(path: FileModel?)
     }
 
+    // TODO delete
+    companion object {
+        fun newInstance(): PieChartFragment {
+            return PieChartFragment()
+        }
+    }
+
+
+    // Call upon the fragment is link with activity (1)
+    override fun onAttach(activity: Context) {
+        super.onAttach(activity)
+        //Toast.makeText(activity, "onAttach", Toast.LENGTH_SHORT).show()
+
+    }
+    // (2)
+    override fun onCreate(savedInstanceState: Bundle?) {
+        super.onCreate(savedInstanceState)
+        this.retainInstance = true
+    }
+    // (3)
     override fun onCreateView(
         inflater: LayoutInflater,
         container: ViewGroup?,
@@ -51,11 +73,10 @@ class PieChartFragment : Fragment(), OnChartValueSelectedListener {
         )
         // link with layout
         pieChart = view.findViewById(com.example.fileexplorer.R.id.piechart)
-
         // add listener
         pieChart!!.setOnChartValueSelectedListener(this);
 
-        // get path
+        // get path of current directory
         path = arguments!!.getString("path", "/") // /storage/emulated/0/
         // get files list
         filesList = callback.onArticleSelected(path)
@@ -66,7 +87,7 @@ class PieChartFragment : Fragment(), OnChartValueSelectedListener {
         pieChart!!.onTouchListener = object : PieRadarChartTouchListener(pieChart){
             override fun onSingleTapUp(e: MotionEvent?): Boolean {
 
-                // Toggle pourcent mode (data)
+                // Toggle pourcent mode
                 pieChart?.setUsePercentValues(!pieChart!!.isUsePercentValuesEnabled());
                 pieChart?.invalidate();
 
@@ -82,13 +103,16 @@ class PieChartFragment : Fragment(), OnChartValueSelectedListener {
 
         return view;
     }
-
-
-    override fun onCreate(savedInstanceState: Bundle?) {
-        super.onCreate(savedInstanceState)
-        // Initialisation des variables
-        this.retainInstance = true
-
+    // call upon the fragment is ready and displayed (4)
+    override fun onActivityCreated(savedInstanceState: Bundle?) {
+        super.onActivityCreated(savedInstanceState)
+        //Toast.makeText(activity, "onActivityCreated", Toast.LENGTH_SHORT).show()
+    }
+    // TODO delete
+    // call upon the fragment is detached
+    override fun onDetach() {
+        super.onDetach()
+        //Toast.makeText(activity, "onDetach", Toast.LENGTH_SHORT).show()
     }
 
     // Gère le texte au centre du PIE chart
@@ -110,35 +134,6 @@ class PieChartFragment : Fragment(), OnChartValueSelectedListener {
         //s.setSpan(StyleSpan(Typeface.ITALIC), s.length - 5, s.length, 0)
         //s.setSpan(ForegroundColorSpan(ColorTemplate.getHoloBlue()), s.length - 5, s.length, 0)
         return s
-    }
-
-    companion object {
-        fun newInstance(): PieChartFragment {
-            return PieChartFragment()
-        }
-    }
-
-
-
-    // call upon the fragment is ready and displayed
-    override fun onActivityCreated(savedInstanceState: Bundle?) {
-        super.onActivityCreated(savedInstanceState)
-    }
-    // Call upon the fragment is link with activity
-    override fun onAttach(activity: Context) {
-        super.onAttach(activity)
-
-        try {
-            //mListener = activity as OnFragmentInteractionListener
-        } catch (e: ClassCastException) {
-            throw ClassCastException(
-                activity.toString() +
-                        " must implement onFragmentInteractionListener"
-            )
-        }
-    }
-    override fun onDetach() {
-        super.onDetach()
     }
 
     // when a entry is selected
