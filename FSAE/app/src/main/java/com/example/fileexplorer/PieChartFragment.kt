@@ -35,7 +35,7 @@ class PieChartFragment : Fragment(), OnChartValueSelectedListener {
     // interface implemented by MainActivity
     interface OnHeadlineSelectedListener {
         fun onArticleSelected(path: String): List<FileModel>
-        fun updateBackStack(path: String, name: String)
+        fun updateBackStack(path: FileModel?)
     }
 
     override fun onCreateView(
@@ -51,7 +51,7 @@ class PieChartFragment : Fragment(), OnChartValueSelectedListener {
 
         pieChart = view.findViewById(com.example.fileexplorer.R.id.piechart)
 
-        // Ajoute les listener
+        // add listener
         pieChart!!.setOnChartValueSelectedListener(this);
 
         // get path et files
@@ -80,6 +80,100 @@ class PieChartFragment : Fragment(), OnChartValueSelectedListener {
         return view;
     }
 
+
+    override fun onCreate(savedInstanceState: Bundle?) {
+        super.onCreate(savedInstanceState)
+        // Initialisation des variables
+        this.retainInstance = true
+
+    }
+
+    // Gère le texte au centre du PIE chart
+    private fun generateCenterSpannableText(): CharSequence? {
+        // Display % or MB
+        var s = SpannableString("")
+        if ( !pieChart!!.isUsePercentValuesEnabled)
+            s = SpannableString("[MB]")
+        else
+            s = SpannableString("[%]")
+
+        s.setSpan(RelativeSizeSpan(2f), 0, s.length, 0)
+
+        // Display current Directory :
+        //var directoryName = "Image";
+        //val s = SpannableString("In directory\n" + directoryName)
+        //s.setSpan(RelativeSizeSpan(1.5f), 13, 13 + directoryName.length, 0)
+        //s.setSpan(RelativeSizeSpan(1.5f), 0, 4, 0)
+        //s.setSpan(StyleSpan(Typeface.ITALIC), s.length - 5, s.length, 0)
+        //s.setSpan(ForegroundColorSpan(ColorTemplate.getHoloBlue()), s.length - 5, s.length, 0)
+        return s
+    }
+
+    companion object {
+        fun newInstance(): PieChartFragment {
+            return PieChartFragment()
+        }
+    }
+
+
+
+    // call upon the fragment is ready and displayed
+    override fun onActivityCreated(savedInstanceState: Bundle?) {
+        super.onActivityCreated(savedInstanceState)
+    }
+    // Call upon the fragment is link with activity
+    override fun onAttach(activity: Context) {
+        super.onAttach(activity)
+
+        try {
+            //mListener = activity as OnFragmentInteractionListener
+        } catch (e: ClassCastException) {
+            throw ClassCastException(
+                activity.toString() +
+                        " must implement onFragmentInteractionListener"
+            )
+        }
+    }
+    override fun onDetach() {
+        super.onDetach()
+    }
+
+    // when a entry is selected
+    override fun onValueSelected(e: Entry?, h: Highlight?) {
+
+        // Recupère l'index de l'element selectionné
+        var index = h!!.x;
+        // Recuère la valeure de l'element (size)
+        var size = h.y;
+
+        if (filesList?.get(index.toInt())!!.fileType.equals(FileType.FILE)) {
+            var ms = 32
+            //TODO is a file.. so we can't go inside (make a notif)
+        } else {
+            // get path
+            path = filesList?.get(index.toInt())!!.path // path + "/storage/emulated/0/DCIM"
+            // update stack files
+            callback.updateBackStack(filesList?.get(index.toInt()))
+            // update data PieCHart
+            filesList = callback.onArticleSelected(path)
+            initDataPieChar(filesList!!)
+
+
+            // update center text
+            //pieChart!!.setCenterText(generateCenterSpannableText());
+
+        }
+
+    }
+
+    // TODO delete
+    override fun onNothingSelected() {
+        // Toggle X (labels) valeur
+        //pieChart?.setDrawEntryLabels(!pieChart!!.isDrawEntryLabelsEnabled());
+        //pieChart?.invalidate();
+    }
+
+    // init data to Pia Chart
     private fun initDataPieChar(onArticleSelected: List<FileModel>) {
 
         // Offset de la légende
@@ -204,104 +298,6 @@ class PieChartFragment : Fragment(), OnChartValueSelectedListener {
         l.setTextSize(18f);
 
         l.setEnabled(true);
-    }
-
-
-    override fun onCreate(savedInstanceState: Bundle?) {
-        super.onCreate(savedInstanceState)
-        // Initialisation des variables
-        this.retainInstance = true
-
-    }
-
-    // Gère le texte au centre du PIE chart
-    private fun generateCenterSpannableText(): CharSequence? {
-        // Display % or MB
-        var s = SpannableString("")
-        if ( !pieChart!!.isUsePercentValuesEnabled)
-            s = SpannableString("[MB]")
-        else
-            s = SpannableString("[%]")
-
-        s.setSpan(RelativeSizeSpan(2f), 0, s.length, 0)
-
-        // Display current Directory :
-        //var directoryName = "Image";
-        //val s = SpannableString("In directory\n" + directoryName)
-        //s.setSpan(RelativeSizeSpan(1.5f), 13, 13 + directoryName.length, 0)
-        //s.setSpan(RelativeSizeSpan(1.5f), 0, 4, 0)
-        //s.setSpan(StyleSpan(Typeface.ITALIC), s.length - 5, s.length, 0)
-        //s.setSpan(ForegroundColorSpan(ColorTemplate.getHoloBlue()), s.length - 5, s.length, 0)
-        return s
-    }
-
-    companion object {
-        fun newInstance(): PieChartFragment {
-            return PieChartFragment()
-        }
-    }
-
-
-
-    // call upon the fragment is ready and displayed
-    override fun onActivityCreated(savedInstanceState: Bundle?) {
-        super.onActivityCreated(savedInstanceState)
-    }
-    // Call upon the fragment is link with activity
-    override fun onAttach(activity: Context) {
-        super.onAttach(activity)
-
-        try {
-            //mListener = activity as OnFragmentInteractionListener
-        } catch (e: ClassCastException) {
-            throw ClassCastException(
-                activity.toString() +
-                        " must implement onFragmentInteractionListener"
-            )
-        }
-    }
-    override fun onDetach() {
-        super.onDetach()
-    }
-
-
-    override fun onValueSelected(e: Entry?, h: Highlight?) {
-
-        // Recupère l'index de l'element selectionné
-        var index = h!!.x;
-        // Recuère la valeure de l'element (size)
-        var size = h.y;
-
-        if (filesList?.get(index.toInt())!!.fileType.equals(FileType.FILE)) {
-            var ms = 32
-            //TODO is a file.. so we can't go inside (make a notif)
-        } else {
-            // update stack and data
-            path = filesList?.get(index.toInt())!!.path // path + "/storage/emulated/0/DCIM"
-            //TODO update better cause click on name don t work
-            callback.updateBackStack(path, filesList?.get(index.toInt())!!.name)
-            filesList = callback.onArticleSelected(path)
-            initDataPieChar(filesList!!)
-
-            // unselect entry
-
-
-            // update center text
-            //pieChart!!.setCenterText(generateCenterSpannableText());
-
-        }
-
-
-
-
-
-    }
-
-    // TODO delete
-    override fun onNothingSelected() {
-        // Toggle X (labels) valeur
-        //pieChart?.setDrawEntryLabels(!pieChart!!.isDrawEntryLabelsEnabled());
-        //pieChart?.invalidate();
     }
 
 }

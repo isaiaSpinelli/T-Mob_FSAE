@@ -35,11 +35,11 @@ import launchFileIntent
 // https://github.com/PhilJay/MPAndroidChart
 // http://thetechnocafe.com/build-a-file-explorer-in-kotlin-part-1-introduction-and-set-up/
 
-//TODO change application name from FileExplorer to FSAE
+//TODO don t display BreadcrumbRecycler when lauch app fisrt time
 //TODO Refactor gestion PieChart and legend (maybe DataSet in variable class)
 //TODO when PieChart display with 0 element (add notif more clearly)
 //TODO when PieChart display with elements empty
-//TODO bug when click on breadcrum build with piaChart
+//TODO when PieChart display with to much elements
 
 
 //TO KNOW: PieChart's Legend can't to have more X label entries ( X = different colors)
@@ -57,6 +57,7 @@ class MainActivity : AppCompatActivity(), FilesListFragment.OnItemClickListener,
         }
     }
 
+    // Get files sorted for a path of entry selected
     override fun onArticleSelected(path: String): List<FileModel> {
         val files = getFileModelsFromFiles(getFilesFromPath(path))
 
@@ -68,16 +69,10 @@ class MainActivity : AppCompatActivity(), FilesListFragment.OnItemClickListener,
     }
 
     // update the back stack
-    override fun updateBackStack(path: String, name: String) {
-        //backStackManager.addToStack(fileModel)
-        var fileModel = FileModel(
-            path,
-            FileType.FOLDER,
-            name,
-            0.0
-        )
-
-        backStackManager.addToStack(fileModel)
+    override fun updateBackStack(fileModel: FileModel?) {
+        if (fileModel != null) {
+            backStackManager.addToStack(fileModel)
+        }
     }
 
     companion object {
@@ -98,6 +93,28 @@ class MainActivity : AppCompatActivity(), FilesListFragment.OnItemClickListener,
 
     }
 
+    // Call upon get answer permissons
+    override fun onRequestPermissionsResult(
+        requestCode: Int, permissions: Array<String>,
+        grantResults: IntArray
+    ) {
+        when (requestCode) {
+            1 -> {
+                if (grantResults.size == 2 &&
+                    grantResults[0] == PackageManager.PERMISSION_GRANTED &&
+                    grantResults[1] == PackageManager.PERMISSION_GRANTED
+                ) {
+                    //TODO call here don t display BreadcrumbRecycler
+                    doInit()
+                } else {
+                    Toast.makeText(this, "Permission Denied", Toast.LENGTH_SHORT).show()
+                    finish()
+                }
+                return
+            }
+        }
+    }
+
     // Init main activity
     private fun doInit() {
 
@@ -115,11 +132,10 @@ class MainActivity : AppCompatActivity(), FilesListFragment.OnItemClickListener,
 
         // press on flotting button (change mode : Explorer or PieChart)
         fab.setOnClickListener { view ->
-            // toggle visibility "add file/dir" menu
-            menu.setGroupVisible(R.id.overFlowItemsToHide, !viewFiles);
+
             // go to mode Pie Chart
             if (viewFiles){
-                viewFiles = false
+                FileListToPieChart()
 
                 // Get list files and size from current directory
                 val path = this.mBreadcrumbRecyclerAdapter.files[this.mBreadcrumbRecyclerAdapter.files.size - 1].path
@@ -128,28 +144,24 @@ class MainActivity : AppCompatActivity(), FilesListFragment.OnItemClickListener,
                 val bundle = Bundle()
                 bundle.putString("path", path)
 
-                // change button icon
-                fab.setImageResource(R.drawable.ic_button_piechart);
 
                 // Enable mode PieChart
                 val PieChartFragment = PieChartFragment()
                 PieChartFragment.setArguments(bundle)
 
+                // change fragment
                 supportFragmentManager.beginTransaction()
                     .replace(R.id.container, PieChartFragment).addToBackStack("test")
                     .commit()
 
             // return to mode explorer files
             } else {
-                viewFiles = true
+                PieChartToFileList()
 
                 // change fragment
                 supportFragmentManager.beginTransaction()
                     .replace(R.id.container, filesListFragment).addToBackStack(Environment.getExternalStorageDirectory().absolutePath)
                     .commit()
-
-                // change button icon
-                fab.setImageResource(R.drawable.ic_button_explorer);
 
                 // update stack manager
                 backStackManager.popFromStackTill(FileModel(
@@ -158,11 +170,11 @@ class MainActivity : AppCompatActivity(), FilesListFragment.OnItemClickListener,
                     "/",
                     0.0
                 ))
-
             }
-
         }
     }
+
+
 
     // Setup permissons
     // return true if all permissons are accepts
@@ -180,26 +192,7 @@ class MainActivity : AppCompatActivity(), FilesListFragment.OnItemClickListener,
         return ret
     }
 
-    // Call upon get answer permissons
-    override fun onRequestPermissionsResult(
-        requestCode: Int, permissions: Array<String>,
-        grantResults: IntArray
-    ) {
-        when (requestCode) {
-            1 -> {
-                if (grantResults.size == 2 &&
-                    grantResults[0] == PackageManager.PERMISSION_GRANTED &&
-                    grantResults[1] == PackageManager.PERMISSION_GRANTED
-                ) {
-                    doInit()
-                } else {
-                    Toast.makeText(this, "Permission Denied", Toast.LENGTH_SHORT).show()
-                    finish()
-                }
-                return
-            }
-        }
-    }
+
 
     // Check if all permissons are accept
     fun hasPermissions(context: Context, vararg permissions: String): Boolean =
@@ -209,26 +202,37 @@ class MainActivity : AppCompatActivity(), FilesListFragment.OnItemClickListener,
 
     private fun initViews() {
         setSupportActionBar(toolbar)
-
         breadcrumbRecyclerView.layoutManager =
             LinearLayoutManager(this, LinearLayoutManager.HORIZONTAL, false)
         mBreadcrumbRecyclerAdapter = BreadcrumbRecyclerAdapter()
         breadcrumbRecyclerView.adapter = mBreadcrumbRecyclerAdapter
+
+        // Click on item to BreadCrumb
         mBreadcrumbRecyclerAdapter.onItemClickListener = {
-            supportFragmentManager.popBackStack(it.path, 2);
+
+            // if we need to update desgin
+           if (viewFiles == false){
+               PieChartToFileList()
+            }
+
+            // update files list of entry choice //supportFragmentManager.popBackStack(it.path, 2);
+            filesListFragment = FilesListFragment.build {
+                path = it.path
+            }
+            supportFragmentManager.beginTransaction()
+                .replace(R.id.container, filesListFragment)
+                .addToBackStack(it.path)
+                .commit()
+
+            // update stack top design
             backStackManager.popFromStackTill(it)
-            viewFiles = true
+
         }
     }
 
     private fun initBackStack() {
         backStackManager.onStackChangeListener = {
             updateAdapterData(it)
-            // if we need to change view PieChart To File list
-            if (!viewFiles){
-                PieChartToFileList();
-            }
-
         }
 
         backStackManager.addToStack(
@@ -244,16 +248,18 @@ class MainActivity : AppCompatActivity(), FilesListFragment.OnItemClickListener,
     // Switch view from PieChart to Files list
     private fun PieChartToFileList() {
         viewFiles = true
-
         // set visibility "add file/dir" menu
         menu.setGroupVisible(R.id.overFlowItemsToHide, viewFiles);
-
-        // change fragment
-        supportFragmentManager.beginTransaction()
-            .replace(R.id.container, filesListFragment)
         // change button icon
         fab.setImageResource(R.drawable.ic_button_explorer);
-
+    }
+    // Switch view from Files list to PieChart
+    private fun FileListToPieChart() {
+        viewFiles = false
+        // toggle visibility "add file/dir" menu
+        menu.setGroupVisible(R.id.overFlowItemsToHide, viewFiles)
+        // change button icon
+        fab.setImageResource(R.drawable.ic_button_piechart);
     }
 
     private fun updateAdapterData(files: List<FileModel>) {
