@@ -39,8 +39,6 @@ import launchFileIntent
 //TODO Refactor gestion PieChart and legend (maybe DataSet in variable class)
 //TODO when PieChart display with 0 element (add notif more clearly)
 //TODO when PieChart display with elements empty
-//TODO when PieChart display with to much elements
-
 
 //TO KNOW: PieChart's Legend can't to have more X label entries ( X = different colors)
 class MainActivity : AppCompatActivity(), FilesListFragment.OnItemClickListener, PieChartFragment.OnHeadlineSelectedListener  {

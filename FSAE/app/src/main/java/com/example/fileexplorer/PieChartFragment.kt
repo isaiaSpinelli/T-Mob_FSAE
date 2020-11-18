@@ -22,7 +22,8 @@ import com.github.mikephil.charting.utils.ColorTemplate
 
 
 class PieChartFragment : Fragment(), OnChartValueSelectedListener {
-
+    // max number entry (if more 20 => add color in legend)
+    private val MAX_ELEMENT = 20
     private var path: String = ""
     private var filesList: List<FileModel>? = null
     private var pieChart: PieChart? = null
@@ -48,15 +49,17 @@ class PieChartFragment : Fragment(), OnChartValueSelectedListener {
             container,
             false
         )
-
+        // link with layout
         pieChart = view.findViewById(com.example.fileexplorer.R.id.piechart)
 
         // add listener
         pieChart!!.setOnChartValueSelectedListener(this);
 
-        // get path et files
+        // get path
         path = arguments!!.getString("path", "/") // /storage/emulated/0/
+        // get files list
         filesList = callback.onArticleSelected(path)
+
         initDataPieChar(filesList!!)
 
         // when the PieChart is clicked
@@ -176,6 +179,12 @@ class PieChartFragment : Fragment(), OnChartValueSelectedListener {
     // init data to Pia Chart
     private fun initDataPieChar(onArticleSelected: List<FileModel>) {
 
+        //TODO if to many elements (ADD NOTIF MAYBE)
+        // limit 20 elements
+        if (onArticleSelected!!.size >= MAX_ELEMENT ){
+            filesList = onArticleSelected!!.subList(0,MAX_ELEMENT-1)
+        }
+
         // Offset de la légende
         pieChart!!.setExtraOffsets(0f, 0f, 0f, 0f);
 
@@ -183,7 +192,7 @@ class PieChartFragment : Fragment(), OnChartValueSelectedListener {
         // ----- AJOUT DES DONNEES -----
         val NoOfEmp = mutableListOf<PieEntry>()
 
-        for (file in onArticleSelected){
+        for (file in filesList!!){
             NoOfEmp.add(PieEntry(file.sizeInMB.toFloat(), file.name))
         }
 
