@@ -5,9 +5,13 @@ import FileModel
 import FileType
 import FileUtilsDeleteFile
 import android.Manifest
+import android.app.NotificationChannel
+import android.app.NotificationManager
 import android.content.Context
 import android.content.Intent
 import android.content.pm.PackageManager
+import android.graphics.Color
+import android.os.Build
 import android.os.Bundle
 import android.os.Environment
 import android.view.LayoutInflater
@@ -17,6 +21,8 @@ import android.view.View
 import android.widget.Toast
 import androidx.appcompat.app.AppCompatActivity
 import androidx.core.app.ActivityCompat
+import androidx.core.app.NotificationCompat
+import androidx.core.app.NotificationManagerCompat
 import androidx.fragment.app.Fragment
 import androidx.recyclerview.widget.LinearLayoutManager
 import com.example.fileexplorer.fileslist.FilesListFragment
@@ -28,22 +34,27 @@ import getFileModelsFromFiles
 import getFilesFromPath
 import kotlinx.android.synthetic.main.activity_main.*
 import kotlinx.android.synthetic.main.dialog_enter_name.view.*
-import kotlinx.coroutines.GlobalScope
-import kotlinx.coroutines.delay
-import kotlinx.coroutines.launch
 import launchFileIntent
+
 
 // Sources :
 // https://github.com/PhilJay/MPAndroidChart
 // http://thetechnocafe.com/build-a-file-explorer-in-kotlin-part-1-introduction-and-set-up/
 
+//TODO CHANNEL_ID share betwenn MainActivity and PisChartFragment
+//TODO Error first lauch app
 //TODO Refactor gestion PieChart and legend (maybe DataSet in variable class)
-//TODO when PieChart display with 0 element (add notif more clearly)
-//TODO when PieChart display with elements empty
 
-//TO KNOW: PieChart's Legend can't to have more X label entries ( X = different colors)
+
+//TODO add function to sort
+
+//TO KNOW: PieChart's Legend can't to have more X label entries ( X = different colors (now 19))
+//TO KNOW: when PieChart display with too much elements, its ugly (now max 10)
+
 class MainActivity : AppCompatActivity(), FilesListFragment.OnItemClickListener, PieChartFragment.OnHeadlineSelectedListener  {
+    lateinit var CHANNEL_ID: String
 
+    // TODO delete
     private var notAllowed = true
     private lateinit var filesListFragment: FilesListFragment
     private lateinit var menu: Menu
@@ -79,6 +90,25 @@ class MainActivity : AppCompatActivity(), FilesListFragment.OnItemClickListener,
         private const val OPTIONS_DIALOG_TAG: String = "com.example.fileexplorer.options_dialog"
     }
 
+    override fun onResume() {
+        super.onResume()
+    }
+
+    override fun onStart() {
+        super.onStart()
+    }
+
+    override fun onRestoreInstanceState(savedInstanceState: Bundle) {
+        super.onRestoreInstanceState(savedInstanceState)
+    }
+
+    override fun onPause() {
+        super.onPause()
+    }
+
+    override fun onStop() {
+        super.onStop()
+    }
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         window.decorView.systemUiVisibility =
@@ -89,13 +119,26 @@ class MainActivity : AppCompatActivity(), FilesListFragment.OnItemClickListener,
         // Check permission
         notAllowed = !setupPermissionsOK()
 
-        // launch a new coroutine in background and continue, allow to catch answer for permissons
-        GlobalScope.launch {
-            while(notAllowed){
-                delay(100)
-            }
+        if (!notAllowed){
+            createChannel()
             doInit()
+        } else {
+            // TODO error for first lauch app
+            // launch a new coroutine in background and continue, allow to catch answer for permissons
+//            GlobalScope.launch {
+//                var counter = 0
+//                // wait while permission accepted
+//                while(notAllowed){
+//                    delay(100)
+//                    counter++
+//                    if (counter >= 50)
+//                        return@launch
+//                }
+//                doInit()
+//            }
         }
+
+
     }
 
     // Call upon get answer permissons
@@ -112,7 +155,13 @@ class MainActivity : AppCompatActivity(), FilesListFragment.OnItemClickListener,
                 ) {
                     notAllowed = false
 
-                // Permisson denied
+                    // TODO error for first lauch app
+                    //doInit()
+                    Toast.makeText(this, "Permission accepted, PLEASE RELAUCH APP", Toast.LENGTH_LONG).show()
+                    finish()
+
+
+                    // Permisson denied
                 } else {
                     Toast.makeText(this, "Permission Denied", Toast.LENGTH_SHORT).show()
                     finish()
@@ -142,15 +191,27 @@ class MainActivity : AppCompatActivity(), FilesListFragment.OnItemClickListener,
 
             // go to mode Pie Chart
             if (viewFiles){
-                FileListToPieChart()
 
-                // Get list files and size from current directory
-                val path = this.mBreadcrumbRecyclerAdapter.files[this.mBreadcrumbRecyclerAdapter.files.size - 1].path
+                // get current fileModel
+                val fileDir = this.mBreadcrumbRecyclerAdapter.files[this.mBreadcrumbRecyclerAdapter.files.size - 1]
+
+                // Get and check list files and size from current directory
+                val path = fileDir.path
+                val files = getFileModelsFromFiles(getFilesFromPath(path))
+                if (files.isEmpty()){
+                    notifGo(1)
+                    return@setOnClickListener
+                } else if (fileDir.sizeInMB.equals(0.0) and !fileDir.name.equals("/")){
+                    notifGo(0)
+                    return@setOnClickListener
+                }
 
                 // send path to PieChart
                 val bundle = Bundle()
                 bundle.putString("path", path)
 
+
+                FileListToPieChart()
 
                 // Enable mode PieChart
                 val PieChartFragment = PieChartFragment()
@@ -269,6 +330,7 @@ class MainActivity : AppCompatActivity(), FilesListFragment.OnItemClickListener,
                 0.0
             )
         )
+
     }
 
     // Switch view from PieChart to Files list
@@ -308,11 +370,70 @@ class MainActivity : AppCompatActivity(), FilesListFragment.OnItemClickListener,
         when (item.itemId) {
             //TODO implement setting
             R.id.action_settings -> true
+
             R.id.menuNewFile -> createNewFileInCurrentDirectory()
             R.id.menuNewFolder -> createNewFolderInCurrentDirectory()
             //else -> super.onOptionsItemSelected(item)
         }
         return super.onOptionsItemSelected(item)
+    }
+
+    // create channel for notification
+    private fun createChannel(){
+        CHANNEL_ID = "FSAE_channel_0"
+
+        val notificationManager = this.getSystemService(NOTIFICATION_SERVICE) as NotificationManager
+
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
+            val CHANNEL_ID = "FSAE_channel_0"
+            val name: CharSequence = "FSAE channel"
+            val Description = "This is channel for FSAE"
+            val importance = NotificationManager.IMPORTANCE_HIGH
+            val mChannel = NotificationChannel(CHANNEL_ID, name, importance)
+            mChannel.description = Description
+            mChannel.enableLights(true)
+            mChannel.lightColor = Color.RED
+            mChannel.enableVibration(true)
+            mChannel.vibrationPattern = longArrayOf(100, 200, 300, 400, 500, 400, 300, 200, 400)
+            mChannel.setShowBadge(false)
+            notificationManager.createNotificationChannel(mChannel)
+        }
+    }
+
+
+    // is a file
+    // is emtpy
+    private fun notifGo(noitf_ID: Int) {
+
+        var title = "title"
+        var text = "text"
+
+        when(noitf_ID){
+            0 -> {
+                title = "Size null"
+                text = "This folder content only files or folder empty"
+            }
+
+            1 -> {
+                title = "Folder empty"
+                text = "This folder is empty"
+            }
+        }
+
+
+        // implementation "com.android.support:support-compat:28.0.0"
+        // Build the notif
+        var builder = NotificationCompat.Builder(this, CHANNEL_ID)
+        .setSmallIcon(R.drawable.ic_button_explorer)
+        .setContentTitle(title)
+        .setContentText(text)
+        .setPriority(NotificationCompat.PRIORITY_DEFAULT)
+
+        // Display the notif
+        with(NotificationManagerCompat.from(this)) {
+            notify(noitf_ID, builder.build())
+        }
+
     }
 
     // create a new File in current Dir
@@ -383,7 +504,7 @@ class MainActivity : AppCompatActivity(), FilesListFragment.OnItemClickListener,
     }
 
 
-    // TODO delete
+    // click back
     override fun onBackPressed() {
         super.onBackPressed()
         backStackManager.popFromStack()

@@ -1,7 +1,11 @@
 package com.example.fileexplorer
 
 import FileModel
+import android.app.Notification
+import android.app.NotificationManager
+import android.app.PendingIntent
 import android.content.Context
+import android.content.Intent
 import android.graphics.Color
 import android.os.Bundle
 import android.text.SpannableString
@@ -11,6 +15,9 @@ import android.view.MotionEvent
 import android.view.View
 import android.view.ViewGroup
 import android.widget.Toast
+import androidx.core.app.NotificationCompat
+import androidx.core.app.NotificationManagerCompat
+import androidx.core.content.ContextCompat.getSystemService
 import androidx.fragment.app.Fragment
 import com.github.mikephil.charting.charts.PieChart
 import com.github.mikephil.charting.components.Legend
@@ -24,7 +31,7 @@ import com.github.mikephil.charting.utils.ColorTemplate
 
 class PieChartFragment : Fragment(), OnChartValueSelectedListener {
     // max number entry (if more 20 => add color in legend)
-    private val MAX_ELEMENT = 20
+    private val MAX_ELEMENT = 11
     private var path: String = ""
     private var filesList: List<FileModel>? = null
     private var pieChart: PieChart? = null
@@ -144,10 +151,9 @@ class PieChartFragment : Fragment(), OnChartValueSelectedListener {
         // Recuère la valeure de l'element (size)
         var size = h.y;
 
-        if (filesList?.get(index.toInt())!!.fileType.equals(FileType.FILE)) {
-            var ms = 32
-            //TODO is a file.. so we can't go inside (make a notif)
-        } else {
+
+        // if selected a folder and it isn't emtpy
+        if (filesList?.get(index.toInt())!!.fileType.equals(FileType.FOLDER) and !size.equals(0.0)) {
             // get path
             path = filesList?.get(index.toInt())!!.path // path + "/storage/emulated/0/DCIM"
             // update stack files
@@ -155,11 +161,8 @@ class PieChartFragment : Fragment(), OnChartValueSelectedListener {
             // update data PieCHart
             filesList = callback.onArticleSelected(path)
             initDataPieChar(filesList!!)
-
-
             // update center text
             //pieChart!!.setCenterText(generateCenterSpannableText());
-
         }
 
     }
@@ -173,11 +176,22 @@ class PieChartFragment : Fragment(), OnChartValueSelectedListener {
 
     // init data to Pia Chart
     private fun initDataPieChar(onArticleSelected: List<FileModel>) {
-
-        //TODO if to many elements (ADD NOTIF MAYBE)
-        // limit 20 elements
+        // is too many entries
         if (onArticleSelected!!.size >= MAX_ELEMENT ){
             filesList = onArticleSelected!!.subList(0,MAX_ELEMENT-1)
+
+            // Build the notif
+            var builder = NotificationCompat.Builder(activity?.applicationContext!!,  "FSAE_channel_0")
+                .setSmallIcon(R.drawable.ic_button_explorer)
+                .setContentTitle("too many entries")
+                .setContentText("entries are limited to 10")
+                .setPriority(NotificationCompat.PRIORITY_DEFAULT)
+
+            // Display the notif
+            with(NotificationManagerCompat.from(activity?.applicationContext!!)) {
+                notify(2, builder.build())
+            }
+
         }
 
         // Offset de la légende
@@ -247,9 +261,9 @@ class PieChartFragment : Fragment(), OnChartValueSelectedListener {
         // Gère la description du PIE chart
         pieChart!!.getDescription().setEnabled(true);
         pieChart!!.getDescription().text = ("Size of directories");
-        pieChart!!.getDescription().textSize = 25f;
+        pieChart!!.getDescription().textSize = 20f;
         pieChart!!.description.xOffset = 60f
-        pieChart!!.description.yOffset = 10f
+        pieChart!!.description.yOffset = 3f
 
         // Rend tournable
         pieChart!!.setRotationEnabled(true);
