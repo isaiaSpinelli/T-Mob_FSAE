@@ -1,11 +1,7 @@
 package com.example.fileexplorer
 
 import FileModel
-import android.app.Notification
-import android.app.NotificationManager
-import android.app.PendingIntent
 import android.content.Context
-import android.content.Intent
 import android.graphics.Color
 import android.os.Bundle
 import android.text.SpannableString
@@ -14,10 +10,6 @@ import android.view.LayoutInflater
 import android.view.MotionEvent
 import android.view.View
 import android.view.ViewGroup
-import android.widget.Toast
-import androidx.core.app.NotificationCompat
-import androidx.core.app.NotificationManagerCompat
-import androidx.core.content.ContextCompat.getSystemService
 import androidx.fragment.app.Fragment
 import com.github.mikephil.charting.charts.PieChart
 import com.github.mikephil.charting.components.Legend
@@ -46,6 +38,7 @@ class PieChartFragment : Fragment(), OnChartValueSelectedListener {
     interface OnHeadlineSelectedListener {
         fun onArticleSelected(path: String): List<FileModel>
         fun updateBackStack(path: FileModel?)
+        fun notifGo(noitf_ID: Int)
     }
 
     // TODO delete
@@ -54,7 +47,6 @@ class PieChartFragment : Fragment(), OnChartValueSelectedListener {
             return PieChartFragment()
         }
     }
-
 
     // Call upon the fragment is link with activity (1)
     override fun onAttach(activity: Context) {
@@ -85,10 +77,8 @@ class PieChartFragment : Fragment(), OnChartValueSelectedListener {
 
         // get path of current directory
         path = arguments!!.getString("path", "/") // /storage/emulated/0/
-        // get files list
-        filesList = callback.onArticleSelected(path)
-
-        initDataPieChar(filesList!!)
+        // get files list and apply
+        initDataPieChar( callback.onArticleSelected(path) )
 
         // when the PieChart is clicked
         pieChart!!.onTouchListener = object : PieRadarChartTouchListener(pieChart){
@@ -159,8 +149,7 @@ class PieChartFragment : Fragment(), OnChartValueSelectedListener {
             // update stack files
             callback.updateBackStack(filesList?.get(index.toInt()))
             // update data PieCHart
-            filesList = callback.onArticleSelected(path)
-            initDataPieChar(filesList!!)
+            initDataPieChar( callback.onArticleSelected(path) )
             // update center text
             //pieChart!!.setCenterText(generateCenterSpannableText());
         }
@@ -176,29 +165,39 @@ class PieChartFragment : Fragment(), OnChartValueSelectedListener {
 
     // init data to Pia Chart
     private fun initDataPieChar(onArticleSelected: List<FileModel>) {
-        // is too many entries
+        // test limits entries
         if (onArticleSelected!!.size >= MAX_ELEMENT ){
             filesList = onArticleSelected!!.subList(0,MAX_ELEMENT-1)
-
-            // Build the notif
-            var builder = NotificationCompat.Builder(activity?.applicationContext!!,  "FSAE_channel_0")
-                .setSmallIcon(R.drawable.ic_button_explorer)
-                .setContentTitle("too many entries")
-                .setContentText("entries are limited to 10")
-                .setPriority(NotificationCompat.PRIORITY_DEFAULT)
-
-            // Display the notif
-            with(NotificationManagerCompat.from(activity?.applicationContext!!)) {
-                notify(2, builder.build())
-            }
-
+            // Send a notif to warn
+            callback.notifGo(2)
+        } else {
+            filesList = onArticleSelected
         }
 
-        // Offset de la légende
-        pieChart!!.setExtraOffsets(0f, 0f, 0f, 0f);
+        // Applique les données sur le Pie chart
+        pieChart!!.setData(setupData())
 
+        // ----- INFORMATION SUR LE PIE CHART -----
+        setupPieChart();
 
-        // ----- AJOUT DES DONNEES -----
+        // ----- GESTION DE LA LEGENDE -------
+        setupLegend();
+
+    }
+
+    // ---- LIE LES DONNEE ---
+    private fun setupData(): PieData? {
+        // Crée les data pour le Pie Chart
+        val data = PieData(setupDataSet())
+        // configure la couleur et la taille du texte des valeurs
+        data.setValueTextSize(25f)
+        data.setValueTextColor(Color.BLACK)
+        return data
+    }
+
+    // ----- AJOUT DES DONNEES -----
+    private fun setupDataSet(): PieDataSet? {
+
         val NoOfEmp = mutableListOf<PieEntry>()
 
         for (file in filesList!!){
@@ -207,26 +206,15 @@ class PieChartFragment : Fragment(), OnChartValueSelectedListener {
 
         // ajout les données et le label
         var dataSet = PieDataSet(NoOfEmp, "Name directory")
-        // ajoute un nombre après la virgule
-        dataSet.setValueFormatter(PercentFormatter())
-
-        // Crée le PieData
-        val data = PieData(dataSet)
-
-        // ----- INFORMATIONS SUR LES LABEL DANS LE PIE -----
-        // entry label styling
-        pieChart!!.setEntryLabelColor(Color.BLACK);
-        //pieChart.setEntryLabelTypeface(tfRegular);
-        pieChart!!.setEntryLabelTextSize(20f);
 
         // ----- INFORMATIONS SUR LES VALEURS DANS LE PIE -----
         dataSet.sliceSpace = 3f
         dataSet.setSelectionShift(5f)
 
-        data.setValueTextSize(25f)
-        data.setValueTextColor(Color.BLACK)
+        // ajoute un nombre après la virgule
+        dataSet.setValueFormatter(PercentFormatter())
 
-        // Methode 1 : valeur le long d'une barre OU valeur dans la PIE (commenter)
+        // Valeur le long d'une barre
         dataSet.setValueLinePart1OffsetPercentage(20f);
         dataSet.setValueLinePart1Length(0.1f);
         dataSet.setValueLinePart2Length(0.2f);
@@ -234,7 +222,14 @@ class PieChartFragment : Fragment(), OnChartValueSelectedListener {
         dataSet.setYValuePosition(PieDataSet.ValuePosition.OUTSIDE_SLICE);
 
 
+        // Applique les couleurs
+        dataSet.setColors(setupColors())
 
+        return dataSet
+    }
+
+    // ---- ADD COLORS FOR ENTRIES ---
+    private fun setupColors(): ArrayList<Int> {
         // Crée les couleurs a utiliser
         // nombers of colors = max nombers entries (now = 5+5+4+5 = 19)
         val colors: ArrayList<Int> = ArrayList()
@@ -242,21 +237,26 @@ class PieChartFragment : Fragment(), OnChartValueSelectedListener {
         for (c in ColorTemplate.VORDIPLOM_COLORS) colors.add(c) // 5
         for (c in ColorTemplate.JOYFUL_COLORS) colors.add(c)    // 5
         for (c in ColorTemplate.MATERIAL_COLORS) colors.add(c)  // 4
+        return colors
+    }
 
-        // Applique les couleurs
-        dataSet.setColors(colors)
-        //dataSet.setColors(*ColorTemplate.COLORFUL_COLORS)
+    // ----- INFORMATION SUR LE PIE CHART -----
+    private fun setupPieChart(){
+
+        // Offset de la légende
+        pieChart!!.setExtraOffsets(0f, 0f, 0f, 0f);
+
+        // ----- INFORMATIONS SUR LES LABEL DANS LE PIE -----
+        // entry label styling
+        pieChart!!.setEntryLabelColor(Color.BLACK);
+        //pieChart.setEntryLabelTypeface(tfRegular);
+        pieChart!!.setEntryLabelTextSize(20f);
 
 
-        // Applique les données sur le Pie chart
-        pieChart!!.setData(data)
-
-
-        // ----- INFORMATION SUR LE PIE CHART -----
         // Ajout une animation
         pieChart!!.animateXY(1500, 1500)
         // gère la taille (offset) du Pie chart
-        pieChart!!.setExtraOffsets(30f, 0f, 30f, 0f);
+        pieChart!!.setExtraOffsets(30f, -25f, 30f, 0f);
 
         // Gère la description du PIE chart
         pieChart!!.getDescription().setEnabled(true);
@@ -272,7 +272,7 @@ class PieChartFragment : Fragment(), OnChartValueSelectedListener {
 
         // Par défaut, affiche en pourcentage
         pieChart!!.setUsePercentValues(true);
-        // n'affiche pas les lables
+        // n'affiche pas les lables des data sur le chart
         pieChart!!.setDrawEntryLabels(false)
 
         // Gestion du texte du centre
@@ -283,9 +283,10 @@ class PieChartFragment : Fragment(), OnChartValueSelectedListener {
         // Gestion du trou du milieu
         pieChart!!.setHoleRadius(50f);
         pieChart!!.setTransparentCircleRadius(55f);
+    }
 
-
-        // ----- GESTION DE LA LEGENDE -------
+    // ----- GESTION DE LA LEGENDE -------
+    private fun setupLegend(){
 
         val l: Legend = pieChart!!.getLegend()
         // Gère l'alignement
@@ -316,6 +317,6 @@ class PieChartFragment : Fragment(), OnChartValueSelectedListener {
         l.setTextSize(18f);
 
         l.setEnabled(true);
-    }
 
+    }
 }

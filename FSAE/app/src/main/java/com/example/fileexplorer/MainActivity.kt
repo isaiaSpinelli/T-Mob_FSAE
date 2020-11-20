@@ -41,9 +41,8 @@ import launchFileIntent
 // https://github.com/PhilJay/MPAndroidChart
 // http://thetechnocafe.com/build-a-file-explorer-in-kotlin-part-1-introduction-and-set-up/
 
-//TODO CHANNEL_ID share betwenn MainActivity and PisChartFragment
 //TODO Error first lauch app
-//TODO Refactor gestion PieChart and legend (maybe DataSet in variable class)
+//TODO improve managment PieChart, PieData, PieDataSet and legend (maybe DataSet in variable class)
 
 
 //TODO add function to sort
@@ -76,6 +75,44 @@ class MainActivity : AppCompatActivity(), FilesListFragment.OnItemClickListener,
         val filesSort = files.sortedByDescending { it.sizeInMB }
 
         return filesSort
+
+    }
+
+    // is a file
+    // is emtpy
+    override fun notifGo(noitf_ID: Int) {
+
+        var title = "title"
+        var text = "text"
+
+        when(noitf_ID){
+            0 -> {
+                title = "Size null"
+                text = "This folder content only files or folder empty"
+            }
+            1 -> {
+                title = "Folder empty"
+                text = "This folder is empty"
+            }
+            2 -> {
+                title = "Too many entries"
+                text = "Entries are limited to 10"
+            }
+        }
+
+
+        // implementation "com.android.support:support-compat:28.0.0"
+        // Build the notif
+        var builder = NotificationCompat.Builder(this, CHANNEL_ID)
+            .setSmallIcon(R.drawable.ic_button_explorer)
+            .setContentTitle(title)
+            .setContentText(text)
+            .setPriority(NotificationCompat.PRIORITY_DEFAULT)
+
+        // Display the notif
+        with(NotificationManagerCompat.from(this)) {
+            notify(noitf_ID, builder.build())
+        }
 
     }
 
@@ -206,25 +243,12 @@ class MainActivity : AppCompatActivity(), FilesListFragment.OnItemClickListener,
                     return@setOnClickListener
                 }
 
-                // send path to PieChart
-                val bundle = Bundle()
-                bundle.putString("path", path)
+                goToPieChartMode(path)
 
 
-                FileListToPieChart()
-
-                // Enable mode PieChart
-                val PieChartFragment = PieChartFragment()
-                PieChartFragment.setArguments(bundle)
-
-                // change fragment
-                supportFragmentManager.beginTransaction()
-                    .replace(R.id.container, PieChartFragment).addToBackStack("test")
-                    .commit()
 
             // return to mode explorer files
             } else {
-                PieChartToFileList()
 
                 var rootFile = FileModel(
                     Environment.getExternalStorageDirectory().absolutePath,
@@ -233,10 +257,31 @@ class MainActivity : AppCompatActivity(), FilesListFragment.OnItemClickListener,
                     0.0
                 )
 
-                displayFileListFrom(rootFile)
-
+                goToFileListMode(rootFile)
             }
         }
+    }
+
+    private fun goToFileListMode(rootFile: FileModel) {
+        PieChartToFileList()
+        displayFileListFrom(rootFile)
+    }
+
+    private fun goToPieChartMode(path: String) {
+        // send path to PieChart
+        val bundle = Bundle()
+        bundle.putString("path", path)
+
+        FileListToPieChart()
+
+        // Enable mode PieChart
+        val PieChartFragment = PieChartFragment()
+        PieChartFragment.setArguments(bundle)
+
+        // change fragment
+        supportFragmentManager.beginTransaction()
+            .replace(R.id.container, PieChartFragment).addToBackStack("test")
+            .commit()
     }
 
     // display the list of files from a FileModel
@@ -401,40 +446,7 @@ class MainActivity : AppCompatActivity(), FilesListFragment.OnItemClickListener,
     }
 
 
-    // is a file
-    // is emtpy
-    private fun notifGo(noitf_ID: Int) {
 
-        var title = "title"
-        var text = "text"
-
-        when(noitf_ID){
-            0 -> {
-                title = "Size null"
-                text = "This folder content only files or folder empty"
-            }
-
-            1 -> {
-                title = "Folder empty"
-                text = "This folder is empty"
-            }
-        }
-
-
-        // implementation "com.android.support:support-compat:28.0.0"
-        // Build the notif
-        var builder = NotificationCompat.Builder(this, CHANNEL_ID)
-        .setSmallIcon(R.drawable.ic_button_explorer)
-        .setContentTitle(title)
-        .setContentText(text)
-        .setPriority(NotificationCompat.PRIORITY_DEFAULT)
-
-        // Display the notif
-        with(NotificationManagerCompat.from(this)) {
-            notify(noitf_ID, builder.build())
-        }
-
-    }
 
     // create a new File in current Dir
     private fun createNewFileInCurrentDirectory() {
