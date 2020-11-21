@@ -11,6 +11,7 @@ import android.view.ViewGroup
 import android.widget.Toast
 import androidx.fragment.app.Fragment
 import androidx.recyclerview.widget.LinearLayoutManager
+import com.example.fileexplorer.MainActivity
 import com.example.fileexplorer.R
 import com.thetechnocafe.gurleensethi.kotlinfileexplorer.fileslist.FilesRecyclerAdapter
 import getFileModelsFromFiles
@@ -107,7 +108,7 @@ class FilesListFragment : Fragment() {
 
     fun updateDate() {
 
-        val files = getFileModelsFromFiles(getFilesFromPath(PATH))
+        var files = getFileModelsFromFiles(getFilesFromPath(PATH))
 
         if (files.isEmpty()) {
             emptyFolderLayout.visibility = View.VISIBLE
@@ -115,7 +116,28 @@ class FilesListFragment : Fragment() {
             emptyFolderLayout.visibility = View.INVISIBLE
         }
 
+        // Sort files
+        files = sortFiles(MainActivity.sortBy, files)
+
         mFilesAdapter.updateData(files)
+    }
+
+    private fun sortFiles(sortBy: Int, files: List<FileModel>): List<FileModel> {
+        when(sortBy){
+            0 -> return files
+            1 -> return files.sortedByDescending { it.sizeInMB }
+            2 -> return files.sortedBy { it.sizeInMB }
+
+            3 -> return files.sortedByDescending { it.name }
+            4 -> return files.sortedBy { it.name }
+
+            5 -> return files.sortedByDescending { it.extension }
+            6 -> return files.sortedBy { it.extension }
+
+            7 -> return files.sortedByDescending { it.fileType }
+            8 -> return files.sortedBy { it.fileType }
+        }
+        return files
     }
 
 }

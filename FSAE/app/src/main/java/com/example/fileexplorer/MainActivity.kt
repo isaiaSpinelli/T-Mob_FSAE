@@ -41,11 +41,15 @@ import launchFileIntent
 // https://github.com/PhilJay/MPAndroidChart
 // http://thetechnocafe.com/build-a-file-explorer-in-kotlin-part-1-introduction-and-set-up/
 
-//TODO Error first lauch app
-//TODO improve managment PieChart, PieData, PieDataSet and legend (maybe DataSet in variable class)
+//TODO Error : first lauch app
 
+//TODO add : setting for pick a sortby
+//TODO add : display for understand if is a file or folder
+//TODO add : group for all notifications
 
-//TODO add function to sort
+//TODO improve : managment PieChart, PieData, PieDataSet and legend (maybe DataSet in variable class)
+//TODO improve : Fix warning !
+
 
 //TO KNOW: PieChart's Legend can't to have more X label entries ( X = different colors (now 19))
 //TO KNOW: when PieChart display with too much elements, its ugly (now max 10)
@@ -125,6 +129,7 @@ class MainActivity : AppCompatActivity(), FilesListFragment.OnItemClickListener,
 
     companion object {
         private const val OPTIONS_DIALOG_TAG: String = "com.example.fileexplorer.options_dialog"
+        public var sortBy = 0
     }
 
     override fun onResume() {
@@ -366,6 +371,7 @@ class MainActivity : AppCompatActivity(), FilesListFragment.OnItemClickListener,
             updateAdapterData(it)
         }
 
+
         // initialize back stack with root directory
         backStackManager.addToStack(
             fileModel = FileModel(
@@ -414,13 +420,29 @@ class MainActivity : AppCompatActivity(), FilesListFragment.OnItemClickListener,
     override fun onOptionsItemSelected(item: MenuItem): Boolean {
         when (item.itemId) {
             //TODO implement setting
-            R.id.action_settings -> true
+            R.id.action_settings -> {
+                sortBy = (++sortBy) % 9
+                updateFileList()
+            }
 
             R.id.menuNewFile -> createNewFileInCurrentDirectory()
             R.id.menuNewFolder -> createNewFolderInCurrentDirectory()
             //else -> super.onOptionsItemSelected(item)
         }
         return super.onOptionsItemSelected(item)
+    }
+
+    // update the files list for change sortby
+    private fun updateFileList() {
+        var pathNow = this.mBreadcrumbRecyclerAdapter.files[this.mBreadcrumbRecyclerAdapter.files.size-1].path
+        val filesListFragment = FilesListFragment.build {
+            path = pathNow
+        }
+
+        val fragmentTransaction = supportFragmentManager.beginTransaction()
+        fragmentTransaction.replace(R.id.container, filesListFragment)
+        fragmentTransaction.addToBackStack(pathNow)
+        fragmentTransaction.commit()
     }
 
     // create channel for notification
@@ -455,9 +477,8 @@ class MainActivity : AppCompatActivity(), FilesListFragment.OnItemClickListener,
         view.createButton.setOnClickListener {
             val fileName = view.nameEditText.text.toString()
             if (fileName.isNotEmpty()) {
-                createNewFile(fileName, backStackManager.top.path) { _, message ->
+                createNewFile(fileName, backStackManager.top.path) { _, _ ->
                     bottomSheetDialog.dismiss()
-                    //coordinatorLayout.createShortSnackbar(message)
                     updateContentOfCurrentFragment()
                 }
             }
@@ -473,9 +494,8 @@ class MainActivity : AppCompatActivity(), FilesListFragment.OnItemClickListener,
         view.createButton.setOnClickListener {
             val fileName = view.nameEditText.text.toString()
             if (fileName.isNotEmpty()) {
-                createNewFolder(fileName, backStackManager.top.path) { _, message ->
+                createNewFolder(fileName, backStackManager.top.path) { _, _ ->
                     bottomSheetDialog.dismiss()
-                    //coordinatorLayout.createShortSnackbar(message)
                     updateContentOfCurrentFragment()
                 }
             }
