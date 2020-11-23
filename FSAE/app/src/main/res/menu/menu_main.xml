@@ -25,6 +25,64 @@
         </item>
     </group>
 
+    <group android:id="@+id/SortFile">
+
+        <item
+            android:id="@+id/subMenuSortType"
+            android:icon="@drawable/ic_button_sort"
+            android:title="Sort Type"
+            app:showAsAction="always"
+            tools:ignore="AlwaysShowActio">
+            <menu>
+                <item
+                    android:id="@+id/SortingDefault"
+                    android:icon="@drawable/ic_button_default"
+                    android:title="Default"
+                    app:showAsAction="never" />
+                <item
+                    android:id="@+id/sortingSize"
+                    android:icon="@drawable/ic_button_size"
+                    android:title="Size"
+                    app:showAsAction="never" />
+                <item
+                    android:id="@+id/sortName"
+                    android:icon="@drawable/ic_button_name"
+                    android:title="Name"
+                    app:showAsAction="never" />
+                <item
+                    android:id="@+id/sortingExtension"
+                    android:icon="@drawable/ic_button_extension"
+                    android:title="Extension"
+                    app:showAsAction="never" />
+                <item
+                    android:id="@+id/sortingFileType"
+                    android:icon="@drawable/ic_button_file_type"
+                    android:title="File Type"
+                    app:showAsAction="never" />
+            </menu>
+        </item>
+
+        <item
+            android:id="@+id/subMenuSortDirection"
+            android:icon="@drawable/ic_button_direction"
+            android:title="Sort Direction"
+            app:showAsAction="always"
+            tools:ignore="AlwaysShowAction">
+            <menu>
+                <item
+                    android:id="@+id/SortingAscending"
+                    android:icon="@drawable/ic_button_ascending"
+                    android:title="Ascending"
+                    app:showAsAction="never" />
+                <item
+                    android:id="@+id/sortingDescending"
+                    android:icon="@drawable/ic_button_descending"
+                    android:title="Descending"
+                    app:showAsAction="never" />
+            </menu>
+        </item>
+    </group>
+
     <item
         android:id="@+id/action_settings"
         android:orderInCategory="100"

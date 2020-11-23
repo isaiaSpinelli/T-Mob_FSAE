@@ -136,6 +136,7 @@ class FilesListFragment : Fragment() {
 
             7 -> return files.sortedByDescending { it.fileType }
             8 -> return files.sortedBy { it.fileType }
+            else -> return files.asReversed()
         }
         return files
     }

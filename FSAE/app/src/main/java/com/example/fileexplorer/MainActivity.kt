@@ -43,7 +43,6 @@ import launchFileIntent
 
 //TODO Error : first lauch app
 
-//TODO add : setting for pick a sortby
 //TODO add : display for understand if is a file or folder
 //TODO add : group for all notifications
 
@@ -387,16 +386,20 @@ class MainActivity : AppCompatActivity(), FilesListFragment.OnItemClickListener,
     // Switch view from PieChart to Files list
     private fun PieChartToFileList() {
         viewFiles = true
-        // set visibility "add file/dir" menu
-        menu.setGroupVisible(R.id.overFlowItemsToHide, viewFiles);
+        // toggle visibility "add file/dir" menu
+        menu.setGroupVisible(R.id.overFlowItemsToHide, viewFiles)
+        // toggle visibility "sort" menu
+        menu.setGroupVisible(R.id.SortFile, viewFiles)
         // change button icon
-        fab.setImageResource(R.drawable.ic_button_explorer);
+        fab.setImageResource(R.drawable.ic_button_explorer)
     }
     // Switch view from Files list to PieChart
     private fun FileListToPieChart() {
         viewFiles = false
         // toggle visibility "add file/dir" menu
         menu.setGroupVisible(R.id.overFlowItemsToHide, viewFiles)
+        // toggle visibility "sort" menu
+        menu.setGroupVisible(R.id.SortFile, viewFiles)
         // change button icon
         fab.setImageResource(R.drawable.ic_button_piechart);
     }
@@ -425,11 +428,67 @@ class MainActivity : AppCompatActivity(), FilesListFragment.OnItemClickListener,
                 updateFileList()
             }
 
+            // -- CHANGE SORT DIRECTION --
+            R.id.SortingAscending -> {
+                if (!isEven(sortBy)){
+                    sortBy++
+                    updateFileList()
+                }
+            }
+            R.id.sortingDescending -> {
+                if (isEven(sortBy)){
+                    sortBy--
+                    updateFileList()
+                }
+            }
+
+            // -- CHANGE SORT TYPE --
+            R.id.SortingDefault -> {
+                if (isEven(sortBy))
+                    sortBy = 0
+                else
+                    sortBy = -1
+                updateFileList()
+            }
+            R.id.sortingSize -> {
+                if (isEven(sortBy))
+                    sortBy = 2
+                else
+                    sortBy = 1
+                updateFileList()
+            }
+            R.id.sortName -> {
+                if (isEven(sortBy))
+                    sortBy = 4
+                else
+                    sortBy = 3
+                updateFileList()
+            }
+            R.id.sortingExtension -> {
+                if (isEven(sortBy))
+                    sortBy = 6
+                else
+                    sortBy = 5
+                updateFileList()
+            }
+            R.id.sortingFileType -> {
+                if (isEven(sortBy))
+                    sortBy = 8
+                else
+                    sortBy = 7
+                updateFileList()
+            }
+
+            // -- CREATE NEW ITEM --
             R.id.menuNewFile -> createNewFileInCurrentDirectory()
             R.id.menuNewFolder -> createNewFolderInCurrentDirectory()
             //else -> super.onOptionsItemSelected(item)
         }
         return super.onOptionsItemSelected(item)
+    }
+    // Allow to know if the sort is descending or ascending
+    private fun isEven(sortBy: Int): Boolean {
+        return (sortBy % 2 == 0)
     }
 
     // update the files list for change sortby
