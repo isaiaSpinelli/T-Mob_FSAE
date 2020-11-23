@@ -54,8 +54,6 @@ import launchFileIntent
 //TO KNOW: when PieChart display with too much elements, its ugly (now max 10)
 
 class MainActivity : AppCompatActivity(), FilesListFragment.OnItemClickListener, PieChartFragment.OnHeadlineSelectedListener  {
-    lateinit var CHANNEL_ID: String
-
     // TODO delete
     private var notAllowed = true
     private lateinit var filesListFragment: FilesListFragment
@@ -83,12 +81,12 @@ class MainActivity : AppCompatActivity(), FilesListFragment.OnItemClickListener,
 
     // is a file
     // is emtpy
-    override fun notifGo(noitf_ID: Int) {
+    override fun notifGo(notif_ID: Int) {
 
         var title = "title"
         var text = "text"
 
-        when(noitf_ID){
+        when(notif_ID){
             0 -> {
                 title = "Size null"
                 text = "This folder content only files or folder empty"
@@ -103,18 +101,17 @@ class MainActivity : AppCompatActivity(), FilesListFragment.OnItemClickListener,
             }
         }
 
-
-        // implementation "com.android.support:support-compat:28.0.0"
         // Build the notif
-        var builder = NotificationCompat.Builder(this, CHANNEL_ID)
+        var builder = NotificationCompat.Builder(this, getString(R.string.channel_name_ID))
             .setSmallIcon(R.drawable.ic_button_explorer)
             .setContentTitle(title)
             .setContentText(text)
             .setPriority(NotificationCompat.PRIORITY_DEFAULT)
+            .setTimeoutAfter(1000)
 
         // Display the notif
         with(NotificationManagerCompat.from(this)) {
-            notify(noitf_ID, builder.build())
+            notify(notif_ID, builder.build())
         }
 
     }
@@ -198,7 +195,11 @@ class MainActivity : AppCompatActivity(), FilesListFragment.OnItemClickListener,
 
                     // TODO error for first lauch app
                     //doInit()
-                    Toast.makeText(this, "Permission accepted, PLEASE RELAUCH APP", Toast.LENGTH_LONG).show()
+                    Toast.makeText(
+                        this,
+                        "Permission accepted, PLEASE RELAUCH APP",
+                        Toast.LENGTH_LONG
+                    ).show()
                     finish()
 
 
@@ -430,13 +431,13 @@ class MainActivity : AppCompatActivity(), FilesListFragment.OnItemClickListener,
 
             // -- CHANGE SORT DIRECTION --
             R.id.SortingAscending -> {
-                if (!isEven(sortBy)){
+                if (!isEven(sortBy)) {
                     sortBy++
                     updateFileList()
                 }
             }
             R.id.sortingDescending -> {
-                if (isEven(sortBy)){
+                if (isEven(sortBy)) {
                     sortBy--
                     updateFileList()
                 }
@@ -493,7 +494,7 @@ class MainActivity : AppCompatActivity(), FilesListFragment.OnItemClickListener,
 
     // update the files list for change sortby
     private fun updateFileList() {
-        var pathNow = this.mBreadcrumbRecyclerAdapter.files[this.mBreadcrumbRecyclerAdapter.files.size-1].path
+        var pathNow = this.mBreadcrumbRecyclerAdapter.files[this.mBreadcrumbRecyclerAdapter.files.size - 1].path
         val filesListFragment = FilesListFragment.build {
             path = pathNow
         }
@@ -506,14 +507,13 @@ class MainActivity : AppCompatActivity(), FilesListFragment.OnItemClickListener,
 
     // create channel for notification
     private fun createChannel(){
-        CHANNEL_ID = "FSAE_channel_0"
 
         val notificationManager = this.getSystemService(NOTIFICATION_SERVICE) as NotificationManager
 
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
-            val CHANNEL_ID = "FSAE_channel_0"
-            val name: CharSequence = "FSAE channel"
-            val Description = "This is channel for FSAE"
+            val CHANNEL_ID = getString(R.string.channel_name_ID)
+            val name: CharSequence = getString(R.string.channel_name)
+            val Description = getString(R.string.channel_desc)
             val importance = NotificationManager.IMPORTANCE_HIGH
             val mChannel = NotificationChannel(CHANNEL_ID, name, importance)
             mChannel.description = Description
