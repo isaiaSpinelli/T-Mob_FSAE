@@ -4,6 +4,7 @@ import FileChangeBroadcastReceiver
 import FileModel
 import FileType
 import FileUtilsDeleteFile
+import ImageFileModel
 import android.Manifest
 import android.app.NotificationChannel
 import android.app.NotificationManager
@@ -35,11 +36,25 @@ import getFilesFromPath
 import kotlinx.android.synthetic.main.activity_main.*
 import kotlinx.android.synthetic.main.dialog_enter_name.view.*
 import launchFileIntent
+import java.io.File
+import java.nio.file.Files
+import java.nio.file.attribute.BasicFileAttributes
+import java.text.SimpleDateFormat
+import java.time.LocalDate
+import java.time.LocalDateTime
+import java.time.ZoneId
+import java.time.chrono.IsoChronology
+import java.time.format.DateTimeFormatter
+import java.time.format.DateTimeFormatterBuilder
+import java.time.format.ResolverStyle
+import java.time.temporal.ChronoField
+import java.util.*
 
 
 // Sources :
 // https://github.com/PhilJay/MPAndroidChart
 // http://thetechnocafe.com/build-a-file-explorer-in-kotlin-part-1-introduction-and-set-up/
+// https://stackoverflow.com/questions/11015833/getting-list-of-all-files-of-a-specific-type
 
 //TODO Error : first lauch app
 
@@ -47,10 +62,13 @@ import launchFileIntent
 
 //TODO improve : managment PieChart, PieData, PieDataSet and legend (maybe DataSet in variable class)
 //TODO improve : Fix warning !
+//TODO improve : icon notification change to warning
+
 
 
 //TO KNOW: PieChart's Legend can't to have more X label entries ( X = different colors (now 19))
 //TO KNOW: when PieChart display with too much elements, its ugly (now max 10)
+//TO KNOW: pass file to emulated -> adb push  D:\Master\S1\T-MobOp\Test_img /storage/emulated/0
 
 class MainActivity : AppCompatActivity(), FilesListFragment.OnItemClickListener, PieChartFragment.OnHeadlineSelectedListener  {
     // TODO delete
@@ -424,8 +442,117 @@ class MainActivity : AppCompatActivity(), FilesListFragment.OnItemClickListener,
         when (item.itemId) {
             //TODO implement setting
             R.id.action_settings -> {
-                sortBy = (++sortBy) % 9
-                updateFileList()
+
+                var dir = File(getCurrentPath())
+
+                // Get all images files
+                var imgFilter = ExtensionFileFilter(true)
+                dir.listFiles(imgFilter)
+                val imgFiles = imgFilter.getAllFilesFound()
+
+
+                var i = 0
+                for (file in imgFiles) {
+                    // get attribut's file
+                    val attr = Files.readAttributes<BasicFileAttributes>(
+                        file.toPath(),
+                        BasicFileAttributes::class.java
+                    )
+
+                    // get data from file
+                    var date = Date()
+                    val name = file.name
+                    val size = attr.size().toDouble()
+                    val extension = file.extension
+
+                    val path = file.absolutePath
+                    //val abs = file.absolutePath
+                    //val re = file.canonicalPath
+                    //val pa = file.path
+                    //val pa1 = file.toPath()
+
+                    // Get date of image file
+
+                    // if name file include the date
+                    var startDate = getstartDate(name)
+                    if (startDate != -1) { // IMG_20190110_210549.jpg
+                        val dateStr = name.substring(startDate, 15 + startDate)
+
+                        var form = DateTimeFormatterBuilder()
+                            .parseCaseInsensitive()
+                            .parseLenient()
+                            .appendValue(ChronoField.YEAR, 4)
+                            .appendValue(ChronoField.MONTH_OF_YEAR, 2)
+                            .appendValue(ChronoField.DAY_OF_MONTH, 2)
+
+
+                        // TODO Test not alpha
+                        var charSepate: Char
+                        if (dateStr.none { it !in 'A'..'Z' && it !in 'a'..'z' }) {
+                            charSepate = '-'
+                        }else if  (dateStr.matches("[a-zA-Z]+".toRegex())){
+                            charSepate = '-'
+                        }
+                        else if (dateStr.contains('-') ){
+                            charSepate = '-'
+                            form.appendLiteral(charSepate)
+                                .appendValue(ChronoField.HOUR_OF_DAY, 2)
+                                .appendValue(ChronoField.MINUTE_OF_HOUR, 2)
+                                .appendValue(ChronoField.SECOND_OF_MINUTE, 2)
+                        } else if (dateStr.contains('_')){
+                            charSepate = '_'
+                            form.appendLiteral(charSepate)
+                                .appendValue(ChronoField.HOUR_OF_DAY, 2)
+                                .appendValue(ChronoField.MINUTE_OF_HOUR, 2)
+                                .appendValue(ChronoField.SECOND_OF_MINUTE, 2)
+                        } else {
+                            continue
+                        }
+
+
+
+
+
+                        var localTime = LocalDateTime.parse(dateStr, form.toFormatter())
+
+                        date = Date
+                            .from(
+                                localTime.atZone(ZoneId.systemDefault())
+                                    .toInstant()
+                            );
+
+
+                        val test12 = 3
+
+                        // if name file does not include the date (so take last modified)
+                    } else {
+
+                        val lastModified = file.lastModified()
+                        //val l1 =  attr.lastModifiedTime()
+                        //val l2 =  attr.lastAccessTime()
+
+                        date = Date(lastModified)
+                    }
+
+                    // get & add image file
+                    val imageFile = ImageFileModel(
+                        path, name, size, extension, date
+                    )
+
+
+                    i++
+
+
+                }
+
+
+                Toast.makeText(
+                    this,
+                    "found =" + imgFiles.size,
+                    Toast.LENGTH_LONG
+                ).show()
+
+
             }
 
             // -- CHANGE SORT DIRECTION --
@@ -486,6 +613,21 @@ class MainActivity : AppCompatActivity(), FilesListFragment.OnItemClickListener,
         }
         return super.onOptionsItemSelected(item)
     }
+
+    private fun getstartDate(name: String): Int {
+        if ( name.startsWith("IMG")){
+            return 4
+        } else if (name.startsWith("19") or name.startsWith("20")){
+            return 0
+        } else {
+            return -1
+        }
+    }
+
+    private fun getCurrentPath(): String {
+        return this.mBreadcrumbRecyclerAdapter.files[this.mBreadcrumbRecyclerAdapter.files.size - 1].path
+    }
+
     // Allow to know if the sort is descending or ascending
     private fun isEven(sortBy: Int): Boolean {
         return (sortBy % 2 == 0)
