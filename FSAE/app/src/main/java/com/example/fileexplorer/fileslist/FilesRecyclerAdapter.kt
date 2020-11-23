@@ -1,6 +1,7 @@
 package com.thetechnocafe.gurleensethi.kotlinfileexplorer.fileslist
 
 import FileModel
+import android.opengl.Visibility
 import android.view.LayoutInflater
 import android.view.View
 import android.view.ViewGroup
@@ -49,11 +50,15 @@ class FilesRecyclerAdapter : RecyclerView.Adapter<FilesRecyclerAdapter.ViewHolde
             itemView.nameTextView.text = fileModel.name
 
             if (fileModel.fileType == FileType.FOLDER) {
+                itemView.imageFolder.visibility = View.VISIBLE
+
                 itemView.folderTextView.visibility = View.VISIBLE
                 itemView.totalSizeTextView.visibility = View.GONE
 
                 itemView.folderTextView.text = "(${fileModel.subFiles} files --> ${String.format("%.2f", fileModel.sizeInMB)} mb)"
             } else {
+                itemView.imageFolder.visibility = View.INVISIBLE
+
                 itemView.folderTextView.visibility = View.GONE
                 itemView.totalSizeTextView.visibility = View.VISIBLE
                 itemView.totalSizeTextView.text = "${String.format("%.2f", fileModel.sizeInMB)} mb "

@@ -43,8 +43,7 @@ import launchFileIntent
 
 //TODO Error : first lauch app
 
-//TODO add : display for understand if is a file or folder
-//TODO add : group for all notifications
+//TODO add : function for seek and classe all photos
 
 //TODO improve : managment PieChart, PieData, PieDataSet and legend (maybe DataSet in variable class)
 //TODO improve : Fix warning !
