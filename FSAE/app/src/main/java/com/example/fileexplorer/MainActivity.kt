@@ -15,6 +15,7 @@ import android.graphics.Color
 import android.os.Build
 import android.os.Bundle
 import android.os.Environment
+import android.system.Os
 import android.view.LayoutInflater
 import android.view.Menu
 import android.view.MenuItem
@@ -43,10 +44,7 @@ import java.text.SimpleDateFormat
 import java.time.LocalDate
 import java.time.LocalDateTime
 import java.time.ZoneId
-import java.time.chrono.IsoChronology
-import java.time.format.DateTimeFormatter
 import java.time.format.DateTimeFormatterBuilder
-import java.time.format.ResolverStyle
 import java.time.temporal.ChronoField
 import java.util.*
 
@@ -58,11 +56,13 @@ import java.util.*
 
 //TODO Error : first lauch app
 
-//TODO add : function for seek and classe all photos
+//TODO add : function for seek and classe all photos : Refactor & add button
 
 //TODO improve : managment PieChart, PieData, PieDataSet and legend (maybe DataSet in variable class)
 //TODO improve : Fix warning !
 //TODO improve : icon notification change to warning
+//TODO imporve : SAME ? getCurrentPath =? backStackManager.top.path
+//TODO imporve : SAME ? updateFileList =? updateContentOfCurrentFragment
 
 
 
@@ -437,21 +437,64 @@ class MainActivity : AppCompatActivity(), FilesListFragment.OnItemClickListener,
         return true
     }
 
+    fun createSymLink(symLinkFilePath: String, originalFilePath: String): Boolean {
+        try {
+            if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.LOLLIPOP) {
+                Os.symlink(originalFilePath, symLinkFilePath)
+                return true
+            }
+            val libcore = Class.forName("libcore.io.Libcore")
+            val fOs = libcore.getDeclaredField("os")
+            fOs.isAccessible = true
+            val os = fOs.get(null)
+            val method = os.javaClass.getMethod("symlink", String::class.java, String::class.java)
+            method.invoke(os, originalFilePath, symLinkFilePath)
+            return true
+        } catch (e: Exception) {
+            e.printStackTrace()
+        }
+        return false
+    }
+
     // Handle action bar item clicks here
     override fun onOptionsItemSelected(item: MenuItem): Boolean {
         when (item.itemId) {
             //TODO implement setting
             R.id.action_settings -> {
 
-                var dir = File(getCurrentPath())
+
+                //TODO Refactor this features and create button for this
+
+                val ourDirectoryName = "A_img"
+                var currentPath = getCurrentPath()
+                var dir = File(currentPath)
+
 
                 // Get all images files
-                var imgFilter = ExtensionFileFilter(true)
+                var imgFilter = ExtensionFileFilter(true, ourDirectoryName)
                 dir.listFiles(imgFilter)
                 val imgFiles = imgFilter.getAllFilesFound()
 
 
-                var i = 0
+                createNewFolder(ourDirectoryName, currentPath) { _, _ ->
+                    updateContentOfCurrentFragment()
+                }
+
+                // counter for stats
+                var countScreenTiret4 = 0
+                var countWA = 0
+                var countIMGTiretH = 0
+                var countIMGTiretL = 0
+                var countLastModif = 0
+                var countelse = 0
+
+                // for save image file name not deciphered
+                var listNameNoFound = mutableListOf<String>()
+                // for save image file name maybe can deciphered
+                var listNameMaybeFound = mutableListOf<String>()
+
+
+
                 for (file in imgFiles) {
                     // get attribut's file
                     val attr = Files.readAttributes<BasicFileAttributes>(
@@ -473,65 +516,160 @@ class MainActivity : AppCompatActivity(), FilesListFragment.OnItemClickListener,
 
                     // Get date of image file
 
-                    // if name file include the date
+                    // if name file include a date
                     var startDate = getstartDate(name)
-                    if (startDate != -1) { // IMG_20190110_210549.jpg
-                        val dateStr = name.substring(startDate, 15 + startDate)
+                    if (startDate != -1) { // IMG_20190110_210549.jpg // IMG-20200815-WA0010.jpg // 20171016_183246.jpg
+                        // Screenshot_2015-05-25-05-08-26  / Screenshot_20190324-111621  / Screenshot_20190803_154322_com.whatsapp
 
-                        var form = DateTimeFormatterBuilder()
-                            .parseCaseInsensitive()
-                            .parseLenient()
-                            .appendValue(ChronoField.YEAR, 4)
-                            .appendValue(ChronoField.MONTH_OF_YEAR, 2)
-                            .appendValue(ChronoField.DAY_OF_MONTH, 2)
+                        // reduce the seek field
+                        var dateStr = name.substring(startDate, 15 + startDate)
 
 
-                        // TODO Test not alpha
-                        var charSepate: Char
-                        if (dateStr.none { it !in 'A'..'Z' && it !in 'a'..'z' }) {
-                            charSepate = '-'
-                        }else if  (dateStr.matches("[a-zA-Z]+".toRegex())){
-                            charSepate = '-'
-                        }
-                        else if (dateStr.contains('-') ){
-                            charSepate = '-'
+                        // witch kind of date name
+                        if (dateStr.count { it == '-' } == 4) {
+                            countScreenTiret4++
+                            var form = DateTimeFormatterBuilder()
+                                .parseCaseInsensitive()
+                                .parseLenient()
+                                .appendValue(ChronoField.YEAR, 4)
+                                .appendLiteral('-')
+                                .appendValue(ChronoField.MONTH_OF_YEAR, 2)
+                                .appendLiteral('-')
+                                .appendValue(ChronoField.DAY_OF_MONTH, 2)
+                                .appendLiteral('-')
+                                .appendValue(ChronoField.HOUR_OF_DAY, 2)
+                                .appendLiteral('-')
+                                .appendValue(ChronoField.MINUTE_OF_HOUR, 2)
+                                .appendLiteral('-')
+                                .appendValue(ChronoField.SECOND_OF_MINUTE, 2)
+
+                            dateStr = name.substring(startDate, 19 + startDate)
+
+                            var localTime = LocalDateTime.parse(dateStr, form.toFormatter())
+
+                            date = Date
+                                .from(
+                                    localTime.atZone(ZoneId.systemDefault())
+                                        .toInstant()
+                                )
+                        } else if (dateStr.matches("[a-zA-Z]+".toRegex())) {
+                            val charSepate = '-'
+                        } else if (dateStr.contains("-WA")) {
+                            countWA++
+                            dateStr = dateStr.substring(0, 8)
+
+                            var form = DateTimeFormatterBuilder()
+                                .parseCaseInsensitive()
+                                .parseLenient()
+                                .appendValue(ChronoField.YEAR, 4)
+                                .appendValue(ChronoField.MONTH_OF_YEAR, 2)
+                                .appendValue(ChronoField.DAY_OF_MONTH, 2)
+
+                            var localTime = LocalDate.parse(dateStr, form.toFormatter())
+
+                            date = Date.from(
+                                localTime.atStartOfDay(ZoneId.systemDefault()).toInstant()
+                            )
+
+
+                        } else if (dateStr.contains('-')) {
+
+                            countIMGTiretH++
+                            var form = DateTimeFormatterBuilder()
+                                .parseCaseInsensitive()
+                                .parseLenient()
+                                .appendValue(ChronoField.YEAR, 4)
+                                .appendValue(ChronoField.MONTH_OF_YEAR, 2)
+                                .appendValue(ChronoField.DAY_OF_MONTH, 2)
+
+                            val charSepate = '-'
                             form.appendLiteral(charSepate)
                                 .appendValue(ChronoField.HOUR_OF_DAY, 2)
                                 .appendValue(ChronoField.MINUTE_OF_HOUR, 2)
                                 .appendValue(ChronoField.SECOND_OF_MINUTE, 2)
-                        } else if (dateStr.contains('_')){
-                            charSepate = '_'
+
+                            var localTime = LocalDateTime.parse(dateStr, form.toFormatter())
+
+                            date = Date
+                                .from(
+                                    localTime.atZone(ZoneId.systemDefault())
+                                        .toInstant()
+                                )
+
+                        } else if (dateStr.contains('_')) {
+                            countIMGTiretL++
+
+                            var form = DateTimeFormatterBuilder()
+                                .parseCaseInsensitive()
+                                .parseLenient()
+                                .appendValue(ChronoField.YEAR, 4)
+                                .appendValue(ChronoField.MONTH_OF_YEAR, 2)
+                                .appendValue(ChronoField.DAY_OF_MONTH, 2)
+                            val charSepate = '_'
                             form.appendLiteral(charSepate)
                                 .appendValue(ChronoField.HOUR_OF_DAY, 2)
                                 .appendValue(ChronoField.MINUTE_OF_HOUR, 2)
                                 .appendValue(ChronoField.SECOND_OF_MINUTE, 2)
+
+                            var localTime = LocalDateTime.parse(dateStr, form.toFormatter())
+
+                            date = Date
+                                .from(
+                                    localTime.atZone(ZoneId.systemDefault())
+                                        .toInstant()
+                                )
                         } else {
-                            continue
+
+
+                            countelse++
+                            //continue
+                            //countLastModif++
+                            val lastModified = file.lastModified()
+                            //val l1 =  attr.lastModifiedTime()
+                            //val l2 =  attr.lastAccessTime()
+
+                            date = Date(lastModified)
+
+
+                            // add file name maybe can deciphered
+                            listNameMaybeFound.add(name + "\n")
+
+
                         }
 
 
+                        val datePath = DateToPath(date)
 
+                        // copy the image file to our directory create
+                        var fileImgFrom = File(path)
+                        val linkPath = currentPath + '/' + ourDirectoryName + '/' + datePath + name
+                        var fileImgTo = File(linkPath)
 
+                        //createSymLink(linkPath, originalImage) // Symbolic link impossible, Only in /data directory
+                        fileImgFrom.copyTo(fileImgTo, true)
 
-                        var localTime = LocalDateTime.parse(dateStr, form.toFormatter())
-
-                        date = Date
-                            .from(
-                                localTime.atZone(ZoneId.systemDefault())
-                                    .toInstant()
-                            );
-
-
-                        val test12 = 3
 
                         // if name file does not include the date (so take last modified)
                     } else {
-
+                        countLastModif++
                         val lastModified = file.lastModified()
                         //val l1 =  attr.lastModifiedTime()
                         //val l2 =  attr.lastAccessTime()
 
                         date = Date(lastModified)
+
+                        // add file name without deciphered
+                        listNameNoFound.add(name + "\n")
+
+                        val datePath = DateToPath(date)
+
+                        // copy the image file to our directory create
+                        var fileImgFrom = File(path)
+                        val linkPath = currentPath + '/' + ourDirectoryName + '/' + datePath + name
+                        var fileImgTo = File(linkPath)
+
+                        //createSymLink(linkPath, originalImage) // Symbolic link impossible, Only in /data directory
+                        fileImgFrom.copyTo(fileImgTo, true)
                     }
 
                     // get & add image file
@@ -540,17 +678,32 @@ class MainActivity : AppCompatActivity(), FilesListFragment.OnItemClickListener,
                     )
 
 
-                    i++
-
-
                 }
 
+                // Print all file name that have not been deciphered
+                listNameNoFound.sortBy { it }
+                println("----------- Not deciphered : ")
+                println(listNameNoFound)
 
+                // Print all file name that maybe can be deciphered
+                listNameMaybeFound.sortBy { it }
+                println("----------- Maybe deciphered : ")
+                println(listNameMaybeFound)
+
+
+                // Print stats
                 Toast.makeText(
                     this,
-                    "found =" + imgFiles.size,
+                    "found= " + imgFiles.size + "\n\t" +"Last M= " + countLastModif +"\n\t" +"other= " + (imgFiles.size-countLastModif) +"\n\t" +"4Tiret= " + countScreenTiret4 + "\n\t" +"WA= " + countWA +"\n\t" +
+                            "Tiret H= " + countIMGTiretH + "\n\t" +"Tiret L= " + countIMGTiretL + "\n\t" + "Else= " + countelse,
                     Toast.LENGTH_LONG
                 ).show()
+
+                println("----------- result deciphered : ")
+                println(
+                    "found= " + imgFiles.size + "\n\t" +"Last M= " + countLastModif +"\n\t" +"other= " + (imgFiles.size-countLastModif) +"\n\t" +"4Tiret= " + countScreenTiret4 + "\n\t" +"WA= " + countWA +"\n\t" +
+                            "Tiret H= " + countIMGTiretH + "\n\t" +"Tiret L= " + countIMGTiretL + "\n\t" + "Else= " + countelse
+                )
 
 
             }
@@ -614,11 +767,36 @@ class MainActivity : AppCompatActivity(), FilesListFragment.OnItemClickListener,
         return super.onOptionsItemSelected(item)
     }
 
+    // convert a date to path
+    private fun DateToPath(date: Date): Any {
+        val year1 = date.year + 1900
+        val year = String.format(
+            "%04d/",
+            year1
+        )
+
+        val month_date = SimpleDateFormat("MMM")
+        val month_name: String = month_date.format(date.getTime())
+        val month = String.format("%02d_%s/", date.month + 1, month_name)
+
+
+        var localDate = date.toInstant().atZone(ZoneId.systemDefault()).toLocalDate()
+        val day = String.format("%02d/", localDate.getDayOfMonth())
+
+        return year+month+day
+    }
+
     private fun getstartDate(name: String): Int {
+
+        // IMG_20190110_210549.jpg // IMG-20200815-WA0010.jpg
         if ( name.startsWith("IMG")){
             return 4
+        // 20171016_183246.jpg
         } else if (name.startsWith("19") or name.startsWith("20")){
             return 0
+        // Screenshot_2015-05-25-05-08-26  / Screenshot_20190324-111621  / Screenshot_20190803_154322_com.whatsapp
+        } else if (name.startsWith("Screenshot_")){
+            return 11
         } else {
             return -1
         }

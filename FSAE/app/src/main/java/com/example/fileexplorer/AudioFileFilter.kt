@@ -1,10 +1,11 @@
 package com.example.fileexplorer
 
+import android.provider.ContactsContract
 import java.io.File
 import java.io.FileFilter
 import java.util.*
 
-class ExtensionFileFilter(recursive: Boolean = false) : FileFilter {
+class ExtensionFileFilter(recursive: Boolean = false, DirNotCheck: String = "") : FileFilter {
 
     // all files found
     private var fountFiles = mutableListOf<File>()
@@ -22,6 +23,8 @@ class ExtensionFileFilter(recursive: Boolean = false) : FileFilter {
      */
     private var allowDirectories = recursive
 
+    private var DirectoryNotCheck = DirNotCheck
+
 
     fun getAllFilesFound(): MutableList<File> {
         return fountFiles
@@ -31,8 +34,12 @@ class ExtensionFileFilter(recursive: Boolean = false) : FileFilter {
         if (f.isHidden || !f.canRead()) {
             return false
         }
-        return if (f.isDirectory) {
-            checkDirectory(f)
+        return if (f.isDirectory ) {
+            if (!f.name.equals(DirectoryNotCheck)){
+                return checkDirectory(f)
+            } else
+                return false
+
         } else checkFileExtension(f)
     }
 
