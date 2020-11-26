@@ -68,7 +68,7 @@ import java.util.*
 
 //TO KNOW: PieChart's Legend can't to have more X label entries ( X = different colors (now 19))
 //TO KNOW: when PieChart display with too much elements, its ugly (now max 10)
-//TO KNOW: pass file to emulated -> adb push  D:\Master\S1\T-MobOp\Test_img /storage/emulated/0
+//TO KNOW: to put files in Android emulator, USE Terminal -> "adb push  <Your/path> /storage/emulated/0/<path>" ( Ex : "adb push D:\Master\S1\T-MobOp\Test_img /storage/emulated/0"
 
 class MainActivity : AppCompatActivity(), FilesListFragment.OnItemClickListener, PieChartFragment.OnHeadlineSelectedListener  {
     // TODO delete
@@ -463,248 +463,38 @@ class MainActivity : AppCompatActivity(), FilesListFragment.OnItemClickListener,
             R.id.action_settings -> {
 
 
-                //TODO Refactor this features and create button for this
+                //TODO create button for this
 
-                val ourDirectoryName = "A_img"
-                var currentPath = getCurrentPath()
-                var dir = File(currentPath)
+                // directory's name for class all image files
+                val ourDirectoryName = "A_img_1"
+                var seek_class = seekAndClassify(getCurrentPath(), ourDirectoryName, true)
 
+                // seek all image files
+                seek_class.seek()
+                // get image files
+                val imgFiles = seek_class.getAllImagesFiles()
 
-                // Get all images files
-                var imgFilter = ExtensionFileFilter(true, ourDirectoryName)
-                dir.listFiles(imgFilter)
-                val imgFiles = imgFilter.getAllFilesFound()
-
-
-                createNewFolder(ourDirectoryName, currentPath) { _, _ ->
-                    updateContentOfCurrentFragment()
-                }
-
-                // counter for stats
-                var countScreenTiret4 = 0
-                var countWA = 0
-                var countIMGTiretH = 0
-                var countIMGTiretL = 0
-                var countLastModif = 0
-                var countelse = 0
-
-                // for save image file name not deciphered
-                var listNameNoFound = mutableListOf<String>()
-                // for save image file name maybe can deciphered
-                var listNameMaybeFound = mutableListOf<String>()
+                // Classify all files
+                seek_class.classify()
+                // update cuurent display
+                updateContentOfCurrentFragment()
 
 
 
-                for (file in imgFiles) {
-                    // get attribut's file
-                    val attr = Files.readAttributes<BasicFileAttributes>(
-                        file.toPath(),
-                        BasicFileAttributes::class.java
-                    )
-
-                    // get data from file
-                    var date = Date()
-                    val name = file.name
-                    val size = attr.size().toDouble()
-                    val extension = file.extension
-
-                    val path = file.absolutePath
-                    //val abs = file.absolutePath
-                    //val re = file.canonicalPath
-                    //val pa = file.path
-                    //val pa1 = file.toPath()
-
-                    // Get date of image file
-
-                    // if name file include a date
-                    var startDate = getstartDate(name)
-                    if (startDate != -1) { // IMG_20190110_210549.jpg // IMG-20200815-WA0010.jpg // 20171016_183246.jpg
-                        // Screenshot_2015-05-25-05-08-26  / Screenshot_20190324-111621  / Screenshot_20190803_154322_com.whatsapp
-
-                        // reduce the seek field
-                        var dateStr = name.substring(startDate, 15 + startDate)
-
-
-                        // witch kind of date name
-                        if (dateStr.count { it == '-' } == 4) {
-                            countScreenTiret4++
-                            var form = DateTimeFormatterBuilder()
-                                .parseCaseInsensitive()
-                                .parseLenient()
-                                .appendValue(ChronoField.YEAR, 4)
-                                .appendLiteral('-')
-                                .appendValue(ChronoField.MONTH_OF_YEAR, 2)
-                                .appendLiteral('-')
-                                .appendValue(ChronoField.DAY_OF_MONTH, 2)
-                                .appendLiteral('-')
-                                .appendValue(ChronoField.HOUR_OF_DAY, 2)
-                                .appendLiteral('-')
-                                .appendValue(ChronoField.MINUTE_OF_HOUR, 2)
-                                .appendLiteral('-')
-                                .appendValue(ChronoField.SECOND_OF_MINUTE, 2)
-
-                            dateStr = name.substring(startDate, 19 + startDate)
-
-                            var localTime = LocalDateTime.parse(dateStr, form.toFormatter())
-
-                            date = Date
-                                .from(
-                                    localTime.atZone(ZoneId.systemDefault())
-                                        .toInstant()
-                                )
-                        } else if (dateStr.matches("[a-zA-Z]+".toRegex())) {
-                            val charSepate = '-'
-                        } else if (dateStr.contains("-WA")) {
-                            countWA++
-                            dateStr = dateStr.substring(0, 8)
-
-                            var form = DateTimeFormatterBuilder()
-                                .parseCaseInsensitive()
-                                .parseLenient()
-                                .appendValue(ChronoField.YEAR, 4)
-                                .appendValue(ChronoField.MONTH_OF_YEAR, 2)
-                                .appendValue(ChronoField.DAY_OF_MONTH, 2)
-
-                            var localTime = LocalDate.parse(dateStr, form.toFormatter())
-
-                            date = Date.from(
-                                localTime.atStartOfDay(ZoneId.systemDefault()).toInstant()
-                            )
-
-
-                        } else if (dateStr.contains('-')) {
-
-                            countIMGTiretH++
-                            var form = DateTimeFormatterBuilder()
-                                .parseCaseInsensitive()
-                                .parseLenient()
-                                .appendValue(ChronoField.YEAR, 4)
-                                .appendValue(ChronoField.MONTH_OF_YEAR, 2)
-                                .appendValue(ChronoField.DAY_OF_MONTH, 2)
-
-                            val charSepate = '-'
-                            form.appendLiteral(charSepate)
-                                .appendValue(ChronoField.HOUR_OF_DAY, 2)
-                                .appendValue(ChronoField.MINUTE_OF_HOUR, 2)
-                                .appendValue(ChronoField.SECOND_OF_MINUTE, 2)
-
-                            var localTime = LocalDateTime.parse(dateStr, form.toFormatter())
-
-                            date = Date
-                                .from(
-                                    localTime.atZone(ZoneId.systemDefault())
-                                        .toInstant()
-                                )
-
-                        } else if (dateStr.contains('_')) {
-                            countIMGTiretL++
-
-                            var form = DateTimeFormatterBuilder()
-                                .parseCaseInsensitive()
-                                .parseLenient()
-                                .appendValue(ChronoField.YEAR, 4)
-                                .appendValue(ChronoField.MONTH_OF_YEAR, 2)
-                                .appendValue(ChronoField.DAY_OF_MONTH, 2)
-                            val charSepate = '_'
-                            form.appendLiteral(charSepate)
-                                .appendValue(ChronoField.HOUR_OF_DAY, 2)
-                                .appendValue(ChronoField.MINUTE_OF_HOUR, 2)
-                                .appendValue(ChronoField.SECOND_OF_MINUTE, 2)
-
-                            var localTime = LocalDateTime.parse(dateStr, form.toFormatter())
-
-                            date = Date
-                                .from(
-                                    localTime.atZone(ZoneId.systemDefault())
-                                        .toInstant()
-                                )
-                        } else {
-
-
-                            countelse++
-                            //continue
-                            //countLastModif++
-                            val lastModified = file.lastModified()
-                            //val l1 =  attr.lastModifiedTime()
-                            //val l2 =  attr.lastAccessTime()
-
-                            date = Date(lastModified)
-
-
-                            // add file name maybe can deciphered
-                            listNameMaybeFound.add(name + "\n")
-
-
-                        }
-
-
-                        val datePath = DateToPath(date)
-
-                        // copy the image file to our directory create
-                        var fileImgFrom = File(path)
-                        val linkPath = currentPath + '/' + ourDirectoryName + '/' + datePath + name
-                        var fileImgTo = File(linkPath)
-
-                        //createSymLink(linkPath, originalImage) // Symbolic link impossible, Only in /data directory
-                        fileImgFrom.copyTo(fileImgTo, true)
-
-
-                        // if name file does not include the date (so take last modified)
-                    } else {
-                        countLastModif++
-                        val lastModified = file.lastModified()
-                        //val l1 =  attr.lastModifiedTime()
-                        //val l2 =  attr.lastAccessTime()
-
-                        date = Date(lastModified)
-
-                        // add file name without deciphered
-                        listNameNoFound.add(name + "\n")
-
-                        val datePath = DateToPath(date)
-
-                        // copy the image file to our directory create
-                        var fileImgFrom = File(path)
-                        val linkPath = currentPath + '/' + ourDirectoryName + '/' + datePath + name
-                        var fileImgTo = File(linkPath)
-
-                        //createSymLink(linkPath, originalImage) // Symbolic link impossible, Only in /data directory
-                        fileImgFrom.copyTo(fileImgTo, true)
-                    }
-
-                    // get & add image file
-                    val imageFile = ImageFileModel(
-                        path, name, size, extension, date
-                    )
-
-
-                }
+                // Get all stats of seek and classify
+                val stats = seek_class.getStats()
 
                 // Print all file name that have not been deciphered
-                listNameNoFound.sortBy { it }
                 println("----------- Not deciphered : ")
-                println(listNameNoFound)
+                println(stats.listNameNoFound)
 
                 // Print all file name that maybe can be deciphered
-                listNameMaybeFound.sortBy { it }
                 println("----------- Maybe deciphered : ")
-                println(listNameMaybeFound)
+                println(stats.listNameMaybeFound)
 
-
-                // Print stats
-                Toast.makeText(
-                    this,
-                    "found= " + imgFiles.size + "\n\t" +"Last M= " + countLastModif +"\n\t" +"other= " + (imgFiles.size-countLastModif) +"\n\t" +"4Tiret= " + countScreenTiret4 + "\n\t" +"WA= " + countWA +"\n\t" +
-                            "Tiret H= " + countIMGTiretH + "\n\t" +"Tiret L= " + countIMGTiretL + "\n\t" + "Else= " + countelse,
-                    Toast.LENGTH_LONG
-                ).show()
-
-                println("----------- result deciphered : ")
-                println(
-                    "found= " + imgFiles.size + "\n\t" +"Last M= " + countLastModif +"\n\t" +"other= " + (imgFiles.size-countLastModif) +"\n\t" +"4Tiret= " + countScreenTiret4 + "\n\t" +"WA= " + countWA +"\n\t" +
-                            "Tiret H= " + countIMGTiretH + "\n\t" +"Tiret L= " + countIMGTiretL + "\n\t" + "Else= " + countelse
-                )
-
+                val printStat = seek_class.printStats()
+                println("-----------printStat: ")
+                println(printStat)
 
             }
 
@@ -767,40 +557,7 @@ class MainActivity : AppCompatActivity(), FilesListFragment.OnItemClickListener,
         return super.onOptionsItemSelected(item)
     }
 
-    // convert a date to path
-    private fun DateToPath(date: Date): Any {
-        val year1 = date.year + 1900
-        val year = String.format(
-            "%04d/",
-            year1
-        )
 
-        val month_date = SimpleDateFormat("MMM")
-        val month_name: String = month_date.format(date.getTime())
-        val month = String.format("%02d_%s/", date.month + 1, month_name)
-
-
-        var localDate = date.toInstant().atZone(ZoneId.systemDefault()).toLocalDate()
-        val day = String.format("%02d/", localDate.getDayOfMonth())
-
-        return year+month+day
-    }
-
-    private fun getstartDate(name: String): Int {
-
-        // IMG_20190110_210549.jpg // IMG-20200815-WA0010.jpg
-        if ( name.startsWith("IMG")){
-            return 4
-        // 20171016_183246.jpg
-        } else if (name.startsWith("19") or name.startsWith("20")){
-            return 0
-        // Screenshot_2015-05-25-05-08-26  / Screenshot_20190324-111621  / Screenshot_20190803_154322_com.whatsapp
-        } else if (name.startsWith("Screenshot_")){
-            return 11
-        } else {
-            return -1
-        }
-    }
 
     private fun getCurrentPath(): String {
         return this.mBreadcrumbRecyclerAdapter.files[this.mBreadcrumbRecyclerAdapter.files.size - 1].path

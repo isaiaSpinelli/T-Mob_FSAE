@@ -1,6 +1,5 @@
 package com.example.fileexplorer
 
-import android.provider.ContactsContract
 import java.io.File
 import java.io.FileFilter
 import java.util.*
