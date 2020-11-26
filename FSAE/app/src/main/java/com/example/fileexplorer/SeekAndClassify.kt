@@ -11,10 +11,10 @@ import java.time.temporal.ChronoField
 import java.util.*
 
 //TODO remove decipher Time (HH:mm:ss) and comments not useful
-//TODO do in background
-//TODO add notif progess
 
 class seekAndClassify(currentPath: String , ourDirectoryName: String = "images_Classify", recursive: Boolean = false) {
+    private var nbFiles: Int = 0
+
     // Save many stats for seek & classify
     private var stats = Stats()
     // All image files found
@@ -41,6 +41,7 @@ class seekAndClassify(currentPath: String , ourDirectoryName: String = "images_C
         var imgFilter = ExtensionFileFilter(true, ourDirectoryName)
         dir.listFiles(imgFilter)
         imgFiles = imgFilter.getAllFilesFound()
+        stats.allFound = imgFiles.size
     }
 
     fun getAllImagesFiles(): MutableList<File> {
@@ -50,6 +51,8 @@ class seekAndClassify(currentPath: String , ourDirectoryName: String = "images_C
 
     // Classify all image files found
     fun classify() {
+
+        nbFiles = 0
 
         // create a directory for classify all image files
         createNewFolder(ourDirectoryName, seekPath) { _, _ ->
@@ -131,6 +134,7 @@ class seekAndClassify(currentPath: String , ourDirectoryName: String = "images_C
             // add each image file in correct directory
             classifyFile(path, date, name)
 
+            nbFiles++
         }
 
         // sort all image files with date not fount or kind not knew
@@ -140,6 +144,9 @@ class seekAndClassify(currentPath: String , ourDirectoryName: String = "images_C
         // remove duplicate
         stats.listNameNoFound = stats.listNameNoFound.distinct().toMutableList()
         stats.listNameMaybeFound = stats.listNameMaybeFound.distinct().toMutableList()
+
+        // calcul number files with date deciphered
+        stats.remains = stats.allFound - stats.lastModified
     }
 
     private fun getDateFromeOneDash(dateStr: String, char: Char): Date {
@@ -297,11 +304,15 @@ class seekAndClassify(currentPath: String , ourDirectoryName: String = "images_C
     }
     // Display stats
     fun printStats(): String {
-        return "Found = " + imgFiles.size + "\n\t" +"Last M = " + stats.lastModified +"\n\t" +"Other = " + stats.remains +"\n\t" +
+        return "Found = " + stats.allFound + "\n\t" +"Last M = " + stats.lastModified +"\n\t" +"Other = " + stats.remains +"\n\t" +
                 "Dash_4 = " + stats.dash_4 + "\n\t" +"-WA = " + stats.wa +"\n\t" + "Dash_h = " + stats.dash_h + "\n\t" +"Dash_l = " +
                 stats.dash_L + "\n\t" + "Else = " + stats.elseFile
     }
 
+    // indicate how many files is done yet
+    fun getProgress(): Int {
+        return nbFiles
+    }
 
 }
 
@@ -309,7 +320,7 @@ class seekAndClassify(currentPath: String , ourDirectoryName: String = "images_C
 data class Stats(
     var allFound: Int = 0,
     var lastModified: Int = 0,
-    var remains: Int = allFound-lastModified,
+    var remains: Int = 0,
     var dash_4: Int = 0,
     var dash_h: Int = 0,
     var dash_L: Int = 0,

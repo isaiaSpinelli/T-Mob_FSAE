@@ -4,7 +4,6 @@ import FileChangeBroadcastReceiver
 import FileModel
 import FileType
 import FileUtilsDeleteFile
-import ImageFileModel
 import android.Manifest
 import android.app.NotificationChannel
 import android.app.NotificationManager
@@ -15,6 +14,7 @@ import android.graphics.Color
 import android.os.Build
 import android.os.Bundle
 import android.os.Environment
+import android.os.SystemClock
 import android.system.Os
 import android.view.LayoutInflater
 import android.view.Menu
@@ -37,16 +37,6 @@ import getFilesFromPath
 import kotlinx.android.synthetic.main.activity_main.*
 import kotlinx.android.synthetic.main.dialog_enter_name.view.*
 import launchFileIntent
-import java.io.File
-import java.nio.file.Files
-import java.nio.file.attribute.BasicFileAttributes
-import java.text.SimpleDateFormat
-import java.time.LocalDate
-import java.time.LocalDateTime
-import java.time.ZoneId
-import java.time.format.DateTimeFormatterBuilder
-import java.time.temporal.ChronoField
-import java.util.*
 
 
 // Sources :
@@ -466,41 +456,10 @@ class MainActivity : AppCompatActivity(), FilesListFragment.OnItemClickListener,
 
             R.id.action_seekAndClass -> {
 
-                //TODO choice name folder in setting
-                //TODO confirme action ?
-                //TODO add progress notif
-                //TODO do in background
-
-                // directory's name for class all image files
-                val ourDirectoryName = "A_img_1"
-                var seek_class = seekAndClassify(getCurrentPath(), ourDirectoryName, true)
-
-                // seek all image files
-                seek_class.seek()
-                // get image files
-                val imgFiles = seek_class.getAllImagesFiles()
-
-                // Classify all files
-                seek_class.classify()
-                // update cuurent display
-                updateContentOfCurrentFragment()
+                seekAndClassImageFiles()
 
 
 
-                // Get all stats of seek and classify
-                val stats = seek_class.getStats()
-
-                // Print all file name that have not been deciphered
-                println("----------- Not deciphered : ")
-                println(stats.listNameNoFound)
-
-                // Print all file name that maybe can be deciphered
-                println("----------- Maybe deciphered : ")
-                println(stats.listNameMaybeFound)
-
-                val printStat = seek_class.printStats()
-                println("-----------printStat: ")
-                println(printStat)
 
             }
 
@@ -563,6 +522,105 @@ class MainActivity : AppCompatActivity(), FilesListFragment.OnItemClickListener,
         return super.onOptionsItemSelected(item)
     }
 
+    private fun seekAndClassImageFiles() {
+        //TODO choice name folder in setting
+        //TODO confirme action ?
+
+        //TODO timout last notif
+        //TODO change icon
+
+
+
+        // directory's name for class all image files
+        val ourDirectoryName = "A_img_1"
+        var seek_class = seekAndClassify(getCurrentPath(), ourDirectoryName, true)
+
+        // seek all image files
+        seek_class.seek()
+        // get image files
+        //seek_class.getAllImagesFiles()
+
+
+        // do the progress notif in background
+        Thread(Runnable{
+            progressTask(seek_class)
+        }).start()
+
+
+        // Classify all files in background
+        Thread(Runnable{
+            classifyTask(seek_class)
+        }).start()
+
+
+    }
+
+    private fun classifyTask(seek_class: seekAndClassify) {
+        // Classify all files
+        seek_class.classify()
+
+        // update curent display
+        updateContentOfCurrentFragment()
+
+        // Get all stats of seek and classify
+        val stats = seek_class.getStats()
+
+        // Print all file name that have not been deciphered
+        println("----------- Not deciphered : ")
+        println(stats.listNameNoFound)
+
+        // Print all file name that maybe can be deciphered
+        println("----------- Maybe deciphered : ")
+        println(stats.listNameMaybeFound)
+
+        val printStat = seek_class.printStats()
+        println("-----------printStat: ")
+        println(printStat)
+    }
+
+    private fun progressTask(seek_class: seekAndClassify) {
+        // Sets the maximum progress as 100
+        val progressMax = seek_class.getAllImagesFiles().size
+        // Creating a notification and setting its various attributes
+        val notification =
+            NotificationCompat.Builder(this, getString(R.string.channel_name_ID))
+                .setSmallIcon(R.drawable.ic_button_extension)
+                .setContentTitle("Seek & Classify all image files")
+                .setContentText("Downloading")
+                .setPriority(NotificationCompat.PRIORITY_LOW)
+                .setOngoing(true)
+                .setOnlyAlertOnce(true)
+                .setProgress(progressMax, 0, true)
+
+
+        // send first progress notif
+        notification.setContentText(0.toString()+"%")
+            .setProgress(progressMax, 0, false)
+        with(NotificationManagerCompat.from(this)) {
+            notify(5, notification.build())
+        }
+
+        var progress = 0
+        while (progress < progressMax) {
+            SystemClock.sleep(300)
+            progress = seek_class.getProgress()
+
+            // update progress notif
+            notification.setContentText((progress*100/progressMax).toString()+"%")
+                .setProgress(progressMax, progress, false)
+            with(NotificationManagerCompat.from(this)) {
+                notify(5, notification.build())
+            }
+        }
+
+        // send last notif
+        notification.setContentText("Task termined !")
+            .setProgress(0, 0, false)
+            .setOngoing(false)
+        with(NotificationManagerCompat.from(this)) {
+            notify(5, notification.build())
+        }
+    }
 
 
     private fun getCurrentPath(): String {
