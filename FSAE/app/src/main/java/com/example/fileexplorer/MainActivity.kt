@@ -461,9 +461,15 @@ class MainActivity : AppCompatActivity(), FilesListFragment.OnItemClickListener,
         when (item.itemId) {
             //TODO implement setting
             R.id.action_settings -> {
+                true
+            }
 
+            R.id.action_seekAndClass -> {
 
-                //TODO create button for this
+                //TODO choice name folder in setting
+                //TODO confirme action ?
+                //TODO add progress notif
+                //TODO do in background
 
                 // directory's name for class all image files
                 val ourDirectoryName = "A_img_1"

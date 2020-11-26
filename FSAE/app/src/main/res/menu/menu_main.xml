@@ -81,6 +81,12 @@
                     app:showAsAction="never" />
             </menu>
         </item>
+
+        <item
+            android:id="@+id/action_seekAndClass"
+            android:title="@string/action_seekAndClass"
+            app:showAsAction="never" />
+
     </group>
 
     <item
