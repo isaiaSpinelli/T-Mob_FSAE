@@ -46,6 +46,7 @@ import launchFileIntent
 // https://stackoverflow.com/questions/11015833/getting-list-of-all-files-of-a-specific-type
 
 //TODO prepare zip folder for test all function app
+
 //TODO Error : first lauch app
 
 //TODO choice name folder in setting
@@ -54,6 +55,8 @@ import launchFileIntent
 //TODO improve : Fix warning !
 //TODO imporve : SAME ? getCurrentPath =? backStackManager.top.path
 //TODO imporve : SAME ? updateFileList =? updateContentOfCurrentFragment
+
+//TODO improve : Use in priority the SD card
 
 
 
@@ -562,7 +565,7 @@ class MainActivity : AppCompatActivity(), FilesListFragment.OnItemClickListener,
         }
         return super.onOptionsItemSelected(item)
     }
-
+    // uncheck all item of a submenu
     private fun uncheckAllItemsOf(subMenuSortDirection: Int) {
         val submenu = menu.findItem(subMenuSortDirection).subMenu
         for (i in 0 until submenu.size()) {
