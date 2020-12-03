@@ -37,8 +37,8 @@ class PieChartFragment : Fragment(), OnChartValueSelectedListener {
     // interface implemented by Activity
     interface OnHeadlineSelectedListener {
         fun onArticleSelected(path: String): List<FileModel>
-        fun updateBackStack(path: FileModel?)
-        fun notifGo(noitf_ID: Int)
+        fun updateBackStack(fileModel: FileModel?)
+        fun notifyUserOnPieChart(notif_ID: Int)
     }
 
     // TODO delete
@@ -169,7 +169,7 @@ class PieChartFragment : Fragment(), OnChartValueSelectedListener {
         if (onArticleSelected!!.size >= MAX_ELEMENT ){
             filesList = onArticleSelected!!.subList(0,MAX_ELEMENT-1)
             // Send a notif to warn
-            callback.notifGo(2)
+            callback.notifyUserOnPieChart(2)
         } else {
             filesList = onArticleSelected
         }

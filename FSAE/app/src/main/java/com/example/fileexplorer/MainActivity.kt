@@ -5,6 +5,7 @@ import FileModel
 import FileType
 import FileUtilsDeleteFile
 import android.Manifest
+import android.app.AlertDialog
 import android.app.NotificationChannel
 import android.app.NotificationManager
 import android.content.Context
@@ -46,13 +47,13 @@ import launchFileIntent
 
 //TODO Error : first lauch app
 
-//TODO add : function for seek and classe all photos : Refactor & add button
+//TODO choice name folder in setting
 
 //TODO improve : managment PieChart, PieData, PieDataSet and legend (maybe DataSet in variable class)
 //TODO improve : Fix warning !
-//TODO improve : icon notification change to warning
 //TODO imporve : SAME ? getCurrentPath =? backStackManager.top.path
 //TODO imporve : SAME ? updateFileList =? updateContentOfCurrentFragment
+
 
 
 
@@ -85,10 +86,8 @@ class MainActivity : AppCompatActivity(), FilesListFragment.OnItemClickListener,
         return filesSort
 
     }
-
-    // is a file
-    // is emtpy
-    override fun notifGo(notif_ID: Int) {
+    // notify user
+    override fun notifyUserOnPieChart(notif_ID: Int) {
 
         var title = "title"
         var text = "text"
@@ -114,6 +113,7 @@ class MainActivity : AppCompatActivity(), FilesListFragment.OnItemClickListener,
             .setContentTitle(title)
             .setContentText(text)
             .setPriority(NotificationCompat.PRIORITY_DEFAULT)
+            .setOnlyAlertOnce(true)
             .setTimeoutAfter(1000)
 
         // Display the notif
@@ -236,7 +236,7 @@ class MainActivity : AppCompatActivity(), FilesListFragment.OnItemClickListener,
         initBackStack()
 
         // press on flotting button (change mode : Explorer or PieChart)
-        fab.setOnClickListener { view ->
+        fab.setOnClickListener { _ ->
 
             // go to mode Pie Chart
             if (viewFiles){
@@ -248,10 +248,10 @@ class MainActivity : AppCompatActivity(), FilesListFragment.OnItemClickListener,
                 val path = fileDir.path
                 val files = getFileModelsFromFiles(getFilesFromPath(path))
                 if (files.isEmpty()){
-                    notifGo(1)
+                    notifyUserOnPieChart(1)
                     return@setOnClickListener
                 } else if (fileDir.sizeInMB.equals(0.0) and !fileDir.name.equals("/")){
-                    notifGo(0)
+                    notifyUserOnPieChart(0)
                     return@setOnClickListener
                 }
 
@@ -454,11 +454,24 @@ class MainActivity : AppCompatActivity(), FilesListFragment.OnItemClickListener,
                 true
             }
 
+            // -- SEEK AND CLASS ALL IMAGE FILES
             R.id.action_seekAndClass -> {
 
-                seekAndClassImageFiles()
-
-
+                // Ask a confirmation
+                val builder = AlertDialog.Builder(this@MainActivity)
+                builder.setMessage("Are you sure you want to seek&class all image files ?")
+                    .setCancelable(false)
+                    .setPositiveButton("Yes") { dialog, _ ->
+                        // seek and classify all image files
+                        seekAndClassImageFiles()
+                        dialog.dismiss()
+                    }
+                    .setNegativeButton("No") { dialog, _ ->
+                        // Dismiss the dialog
+                        dialog.dismiss()
+                    }
+                val alert = builder.create()
+                alert.show()
 
 
             }
@@ -523,12 +536,6 @@ class MainActivity : AppCompatActivity(), FilesListFragment.OnItemClickListener,
     }
 
     private fun seekAndClassImageFiles() {
-        //TODO choice name folder in setting
-        //TODO confirme action ?
-
-        //TODO timout last notif
-        //TODO change icon
-
 
 
         // directory's name for class all image files
@@ -584,9 +591,9 @@ class MainActivity : AppCompatActivity(), FilesListFragment.OnItemClickListener,
         // Creating a notification and setting its various attributes
         val notification =
             NotificationCompat.Builder(this, getString(R.string.channel_name_ID))
-                .setSmallIcon(R.drawable.ic_button_extension)
+                .setSmallIcon(R.drawable.ic_notif_download)
                 .setContentTitle("Seek & Classify all image files")
-                .setContentText("Downloading")
+                .setContentText("Seeking and classify in progress")
                 .setPriority(NotificationCompat.PRIORITY_LOW)
                 .setOngoing(true)
                 .setOnlyAlertOnce(true)
@@ -617,6 +624,8 @@ class MainActivity : AppCompatActivity(), FilesListFragment.OnItemClickListener,
         notification.setContentText("Task termined !")
             .setProgress(0, 0, false)
             .setOngoing(false)
+            .setTimeoutAfter(5000)
+            .setSmallIcon(R.drawable.ic_notif_end)
         with(NotificationManagerCompat.from(this)) {
             notify(5, notification.build())
         }
