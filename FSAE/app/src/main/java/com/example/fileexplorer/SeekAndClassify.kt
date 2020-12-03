@@ -12,7 +12,11 @@ import java.util.*
 
 //TODO remove decipher Time (HH:mm:ss) and comments not useful
 
-class seekAndClassify(currentPath: String , ourDirectoryName: String = "images_Classify", recursive: Boolean = false) {
+class seekAndClassify(
+    currentPath: String,
+    ourDirectoryName: String = "images_Classify",
+    recursive: Boolean = false
+) {
     private var nbFiles: Int = 0
 
     // Save many stats for seek & classify
@@ -87,7 +91,15 @@ class seekAndClassify(currentPath: String , ourDirectoryName: String = "images_C
             var startDate = getstartDate(name)
             if (startDate != -1) {
                 // reduce the seek field
-                var dateStr = name.substring(startDate, 15 + startDate)
+
+                var dateStr = ""
+
+                try {
+                    dateStr = name.substring(startDate, 15 + startDate)
+                } catch (siobe: StringIndexOutOfBoundsException) {
+                    dateStr = name.replace('_', '+')
+                    dateStr = dateStr.replace('-', '*')
+                }
 
 
                 // WITCH KIND OF DATE NAME
@@ -103,15 +115,21 @@ class seekAndClassify(currentPath: String , ourDirectoryName: String = "images_C
                     date = getDateFromeWA(dateStr)
 
                 // with - between date like : Screenshot_20190324-111621
-                } else if (dateStr.contains('-')) {
+                } else if (dateStr.contains('-') && dateStr.length == 15) {
 
 
                     date = getDateFromeOneDash(dateStr, '-')
 
                     // with _ between date like :  IMG_20190110_210549.jpg  or 20171016_183246.jpg or Screenshot_20190803_154322_com.whatsapp
-                } else if (dateStr.contains('_')) {
+                    // new : 20181229231833_picture.jpg
+                } else if (dateStr.contains('_') && dateStr.length == 15) {
 
-                    date = getDateFromeOneDash(dateStr, '_')
+                    if (dateStr.get(dateStr.length-1)== '_' ) {
+                        date = getDateFromeOneDashLast(dateStr, '_')
+                    } else if (dateStr.get(8)== '_' ) {
+                        date = getDateFromeOneDash(dateStr, '_')
+                    }
+
 
                 // a kind not yet knew
                 } else {
@@ -147,6 +165,33 @@ class seekAndClassify(currentPath: String , ourDirectoryName: String = "images_C
 
         // calcul number files with date deciphered
         stats.remains = stats.allFound - stats.lastModified
+    }
+
+    private fun getDateFromeOneDashLast(dateStr: String, char: Char): Date {
+        // add for stats
+        if (char == '-')
+            stats.dash_h++
+        else if (char == '_')
+            stats.dash_L++
+
+        // get date from name
+        var form = DateTimeFormatterBuilder()
+            .parseCaseInsensitive()
+            .parseLenient()
+            .appendValue(ChronoField.YEAR, 4)
+            .appendValue(ChronoField.MONTH_OF_YEAR, 2)
+            .appendValue(ChronoField.DAY_OF_MONTH, 2)
+            .appendValue(ChronoField.HOUR_OF_DAY, 2)
+            .appendValue(ChronoField.MINUTE_OF_HOUR, 2)
+            .appendValue(ChronoField.SECOND_OF_MINUTE, 2)
+            .appendLiteral(char)
+
+        var localTime = LocalDateTime.parse(dateStr, form.toFormatter())
+
+        return Date.from(
+            localTime.atZone(ZoneId.systemDefault())
+                .toInstant()
+        )
     }
 
     private fun getDateFromeOneDash(dateStr: String, char: Char): Date {
@@ -191,7 +236,7 @@ class seekAndClassify(currentPath: String , ourDirectoryName: String = "images_C
 
         var localTime = LocalDate.parse(dateStr, form.toFormatter())
 
-        return Date.from( localTime.atStartOfDay(ZoneId.systemDefault()).toInstant())
+        return Date.from(localTime.atStartOfDay(ZoneId.systemDefault()).toInstant())
     }
 
     private fun getDateFrome4Dash(nameFile: String, startDate: Int): Date {
@@ -217,9 +262,9 @@ class seekAndClassify(currentPath: String , ourDirectoryName: String = "images_C
         var dateStr = nameFile.substring(startDate, 19 + startDate)
         var localTime = LocalDateTime.parse(dateStr, form.toFormatter())
         return Date.from(
-                localTime.atZone(ZoneId.systemDefault())
-                    .toInstant()
-            )
+            localTime.atZone(ZoneId.systemDefault())
+                .toInstant()
+        )
     }
 
     // class file with overwrite (kill duplicate)

@@ -45,6 +45,7 @@ import launchFileIntent
 // http://thetechnocafe.com/build-a-file-explorer-in-kotlin-part-1-introduction-and-set-up/
 // https://stackoverflow.com/questions/11015833/getting-list-of-all-files-of-a-specific-type
 
+//TODO prepare zip folder for test all function app
 //TODO Error : first lauch app
 
 //TODO choice name folder in setting
@@ -53,7 +54,6 @@ import launchFileIntent
 //TODO improve : Fix warning !
 //TODO imporve : SAME ? getCurrentPath =? backStackManager.top.path
 //TODO imporve : SAME ? updateFileList =? updateContentOfCurrentFragment
-
 
 
 
@@ -479,12 +479,20 @@ class MainActivity : AppCompatActivity(), FilesListFragment.OnItemClickListener,
             // -- CHANGE SORT DIRECTION --
             R.id.SortingAscending -> {
                 if (!isEven(sortBy)) {
+                    // display the choice direction
+                    uncheckAllItemsOf(R.id.subMenuSortDirection)
+                    item.setChecked(true)
+                    // update list files
                     sortBy++
                     updateFileList()
                 }
             }
             R.id.sortingDescending -> {
                 if (isEven(sortBy)) {
+                    // display the choice direction
+                    uncheckAllItemsOf(R.id.subMenuSortDirection)
+                    item.setChecked(true)
+                    // update list files
                     sortBy--
                     updateFileList()
                 }
@@ -492,6 +500,10 @@ class MainActivity : AppCompatActivity(), FilesListFragment.OnItemClickListener,
 
             // -- CHANGE SORT TYPE --
             R.id.SortingDefault -> {
+                // display the choice type
+                uncheckAllItemsOf(R.id.subMenuSortType)
+                item.setChecked(true)
+
                 if (isEven(sortBy))
                     sortBy = 0
                 else
@@ -499,6 +511,10 @@ class MainActivity : AppCompatActivity(), FilesListFragment.OnItemClickListener,
                 updateFileList()
             }
             R.id.sortingSize -> {
+                // display the choice type
+                uncheckAllItemsOf(R.id.subMenuSortType)
+                item.setChecked(true)
+
                 if (isEven(sortBy))
                     sortBy = 2
                 else
@@ -506,6 +522,10 @@ class MainActivity : AppCompatActivity(), FilesListFragment.OnItemClickListener,
                 updateFileList()
             }
             R.id.sortName -> {
+                // display the choice type
+                uncheckAllItemsOf(R.id.subMenuSortType)
+                item.setChecked(true)
+
                 if (isEven(sortBy))
                     sortBy = 4
                 else
@@ -513,6 +533,10 @@ class MainActivity : AppCompatActivity(), FilesListFragment.OnItemClickListener,
                 updateFileList()
             }
             R.id.sortingExtension -> {
+                // display the choice type
+                uncheckAllItemsOf(R.id.subMenuSortType)
+                item.setChecked(true)
+
                 if (isEven(sortBy))
                     sortBy = 6
                 else
@@ -520,6 +544,10 @@ class MainActivity : AppCompatActivity(), FilesListFragment.OnItemClickListener,
                 updateFileList()
             }
             R.id.sortingFileType -> {
+                // display the choice type
+                uncheckAllItemsOf(R.id.subMenuSortType)
+                item.setChecked(true)
+
                 if (isEven(sortBy))
                     sortBy = 8
                 else
@@ -533,6 +561,13 @@ class MainActivity : AppCompatActivity(), FilesListFragment.OnItemClickListener,
             //else -> super.onOptionsItemSelected(item)
         }
         return super.onOptionsItemSelected(item)
+    }
+
+    private fun uncheckAllItemsOf(subMenuSortDirection: Int) {
+        val submenu = menu.findItem(subMenuSortDirection).subMenu
+        for (i in 0 until submenu.size()) {
+            submenu.getItem(i).setChecked(false)
+        }
     }
 
     private fun seekAndClassImageFiles() {
@@ -549,13 +584,13 @@ class MainActivity : AppCompatActivity(), FilesListFragment.OnItemClickListener,
 
 
         // do the progress notif in background
-        Thread(Runnable{
+        Thread(Runnable {
             progressTask(seek_class)
         }).start()
 
 
         // Classify all files in background
-        Thread(Runnable{
+        Thread(Runnable {
             classifyTask(seek_class)
         }).start()
 
@@ -601,7 +636,7 @@ class MainActivity : AppCompatActivity(), FilesListFragment.OnItemClickListener,
 
 
         // send first progress notif
-        notification.setContentText(0.toString()+"%")
+        notification.setContentText(0.toString() + "%")
             .setProgress(progressMax, 0, false)
         with(NotificationManagerCompat.from(this)) {
             notify(5, notification.build())
@@ -613,7 +648,7 @@ class MainActivity : AppCompatActivity(), FilesListFragment.OnItemClickListener,
             progress = seek_class.getProgress()
 
             // update progress notif
-            notification.setContentText((progress*100/progressMax).toString()+"%")
+            notification.setContentText((progress * 100 / progressMax).toString() + "%")
                 .setProgress(progressMax, progress, false)
             with(NotificationManagerCompat.from(this)) {
                 notify(5, notification.build())

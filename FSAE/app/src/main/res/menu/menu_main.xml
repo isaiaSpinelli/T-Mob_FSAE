@@ -38,26 +38,36 @@
                     android:id="@+id/SortingDefault"
                     android:icon="@drawable/ic_button_default"
                     android:title="Default"
+                    android:checkable="true"
+                    android:checked="true"
                     app:showAsAction="never" />
                 <item
                     android:id="@+id/sortingSize"
                     android:icon="@drawable/ic_button_size"
                     android:title="Size"
+                    android:checkable="true"
+                    android:checked="false"
                     app:showAsAction="never" />
                 <item
                     android:id="@+id/sortName"
                     android:icon="@drawable/ic_button_name"
                     android:title="Name"
+                    android:checkable="true"
+                    android:checked="false"
                     app:showAsAction="never" />
                 <item
                     android:id="@+id/sortingExtension"
                     android:icon="@drawable/ic_button_extension"
                     android:title="Extension"
+                    android:checkable="true"
+                    android:checked="false"
                     app:showAsAction="never" />
                 <item
                     android:id="@+id/sortingFileType"
                     android:icon="@drawable/ic_button_file_type"
                     android:title="File Type"
+                    android:checkable="true"
+                    android:checked="false"
                     app:showAsAction="never" />
             </menu>
         </item>
@@ -73,11 +83,15 @@
                     android:id="@+id/SortingAscending"
                     android:icon="@drawable/ic_button_ascending"
                     android:title="Ascending"
+                    android:checkable="true"
+                    android:checked="true"
                     app:showAsAction="never" />
                 <item
                     android:id="@+id/sortingDescending"
                     android:icon="@drawable/ic_button_descending"
                     android:title="Descending"
+                    android:checkable="true"
+                    android:checked="false"
                     app:showAsAction="never" />
             </menu>
         </item>
