@@ -785,7 +785,14 @@ class MainActivity : AppCompatActivity(), FilesListFragment.OnItemClickListener,
     // click back
     override fun onBackPressed() {
         super.onBackPressed()
-        backStackManager.popFromStack()
+
+        if (viewFiles == false){
+            PieChartToFileList()
+        } else {
+            backStackManager.popFromStack()
+        }
+        // update list file
+        displayFileListFrom(backStackManager.top)
 
         if (supportFragmentManager.backStackEntryCount == 0) {
             finish()
