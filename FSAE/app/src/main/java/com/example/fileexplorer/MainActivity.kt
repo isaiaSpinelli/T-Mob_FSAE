@@ -53,8 +53,6 @@ import launchFileIntent
 
 //TODO improve : managment PieChart, PieData, PieDataSet and legend (maybe DataSet in variable class)
 //TODO improve : Fix warning !
-//TODO imporve : SAME ? getCurrentPath =? backStackManager.top.path
-//TODO imporve : SAME ? updateFileList =? updateContentOfCurrentFragment
 
 //TODO improve : Use in priority the SD card
 
@@ -487,7 +485,7 @@ class MainActivity : AppCompatActivity(), FilesListFragment.OnItemClickListener,
                     item.setChecked(true)
                     // update list files
                     sortBy++
-                    updateFileList()
+                    updateContentOfCurrentFragment()
                 }
             }
             R.id.sortingDescending -> {
@@ -497,7 +495,7 @@ class MainActivity : AppCompatActivity(), FilesListFragment.OnItemClickListener,
                     item.setChecked(true)
                     // update list files
                     sortBy--
-                    updateFileList()
+                    updateContentOfCurrentFragment()
                 }
             }
 
@@ -511,7 +509,7 @@ class MainActivity : AppCompatActivity(), FilesListFragment.OnItemClickListener,
                     sortBy = 0
                 else
                     sortBy = -1
-                updateFileList()
+                updateContentOfCurrentFragment()
             }
             R.id.sortingSize -> {
                 // display the choice type
@@ -522,7 +520,7 @@ class MainActivity : AppCompatActivity(), FilesListFragment.OnItemClickListener,
                     sortBy = 2
                 else
                     sortBy = 1
-                updateFileList()
+                updateContentOfCurrentFragment()
             }
             R.id.sortName -> {
                 // display the choice type
@@ -533,7 +531,7 @@ class MainActivity : AppCompatActivity(), FilesListFragment.OnItemClickListener,
                     sortBy = 4
                 else
                     sortBy = 3
-                updateFileList()
+                updateContentOfCurrentFragment()
             }
             R.id.sortingExtension -> {
                 // display the choice type
@@ -544,7 +542,7 @@ class MainActivity : AppCompatActivity(), FilesListFragment.OnItemClickListener,
                     sortBy = 6
                 else
                     sortBy = 5
-                updateFileList()
+                updateContentOfCurrentFragment()
             }
             R.id.sortingFileType -> {
                 // display the choice type
@@ -555,7 +553,7 @@ class MainActivity : AppCompatActivity(), FilesListFragment.OnItemClickListener,
                     sortBy = 8
                 else
                     sortBy = 7
-                updateFileList()
+                updateContentOfCurrentFragment()
             }
 
             // -- CREATE NEW ITEM --
@@ -578,7 +576,7 @@ class MainActivity : AppCompatActivity(), FilesListFragment.OnItemClickListener,
 
         // directory's name for class all image files
         val ourDirectoryName = "A_img_1"
-        var seek_class = seekAndClassify(getCurrentPath(), ourDirectoryName, true)
+        var seek_class = seekAndClassify(backStackManager.top.path, ourDirectoryName, true)
 
         // seek all image files
         seek_class.seek()
@@ -670,27 +668,11 @@ class MainActivity : AppCompatActivity(), FilesListFragment.OnItemClickListener,
     }
 
 
-    private fun getCurrentPath(): String {
-        return this.mBreadcrumbRecyclerAdapter.files[this.mBreadcrumbRecyclerAdapter.files.size - 1].path
-    }
-
     // Allow to know if the sort is descending or ascending
     private fun isEven(sortBy: Int): Boolean {
         return (sortBy % 2 == 0)
     }
 
-    // update the files list for change sortby
-    private fun updateFileList() {
-        var pathNow = this.mBreadcrumbRecyclerAdapter.files[this.mBreadcrumbRecyclerAdapter.files.size - 1].path
-        val filesListFragment = FilesListFragment.build {
-            path = pathNow
-        }
-
-        val fragmentTransaction = supportFragmentManager.beginTransaction()
-        fragmentTransaction.replace(R.id.container, filesListFragment)
-        fragmentTransaction.addToBackStack(pathNow)
-        fragmentTransaction.commit()
-    }
 
     // create channel for notification
     private fun createChannel(){

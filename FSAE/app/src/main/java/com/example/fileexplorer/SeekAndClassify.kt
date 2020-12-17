@@ -2,6 +2,7 @@ package com.example.fileexplorer
 
 import createNewFolder
 import java.io.File
+import java.io.IOException
 import java.text.SimpleDateFormat
 import java.time.LocalDate
 import java.time.LocalDateTime
@@ -276,8 +277,14 @@ class seekAndClassify(
         val linkPath = seekPath + '/' + ourDirectoryName + '/' + datePath + name
         var fileImgTo = File(linkPath)
 
-        //createSymLink(linkPath, originalImage) // Symbolic link impossible, Only in /data directory
-        fileImgFrom.copyTo(fileImgTo, true)
+
+        try {
+            //createSymLink(linkPath, originalImage) // Symbolic link impossible, Only in /data directory
+            fileImgFrom.copyTo(fileImgTo, true)
+        } catch (e : IOException) {
+            // Error - Ex : no place storage
+            println(e)
+        }
     }
 
     // Get date from last modifed

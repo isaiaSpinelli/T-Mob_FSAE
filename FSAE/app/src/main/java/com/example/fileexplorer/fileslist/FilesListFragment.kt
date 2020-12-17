@@ -106,7 +106,7 @@ class FilesListFragment : Fragment() {
         updateDate()
     }
 
-    fun updateDate() {
+    private fun updateDate() {
 
         var files = getFileModelsFromFiles(getFilesFromPath(PATH))
 
