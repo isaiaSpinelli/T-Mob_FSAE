@@ -53,6 +53,7 @@ import launchFileIntent
 
 //TODO improve : managment PieChart, PieData, PieDataSet and legend (maybe DataSet in variable class)
 //TODO improve : Fix warning !
+//TODO improve : Limit display in chart if empty
 
 //TODO improve : Use in priority the SD card
 
