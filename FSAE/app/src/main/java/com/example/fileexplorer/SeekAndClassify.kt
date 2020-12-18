@@ -93,7 +93,7 @@ class seekAndClassify(
             if (startDate != -1) {
                 // reduce the seek field
 
-                var dateStr = ""
+                var dateStr : String
 
                 try {
                     dateStr = name.substring(startDate, 15 + startDate)

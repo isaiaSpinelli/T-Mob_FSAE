@@ -68,12 +68,12 @@ class ExtensionFileFilter(recursive: Boolean = false, DirNotCheck: String = "") 
                     subDirs.add(file)
                     false
                 } else false
-            }.size
+            }?.size
 
             for (subDir in subDirs)
                 checkDirectory(subDir)
 
-            if (NbFilesFound > 0)
+            if (NbFilesFound!! > 0)
                 return true
 
             false

@@ -21,14 +21,14 @@ fun getFileModelsFromFiles(files: List<File>): List<FileModel> {
 
 fun getFolderSize(directory: File): Long {
     var size_length = 0.toLong()
-    for (file in directory.listFiles()) {
+    for (file in directory.listFiles()!!) {
         if (file.isFile) size_length += file.length() else size_length += getFolderSize(file)
     }
     return size_length
 }
 fun getFilesFromPath(path: String, showHiddenFiles: Boolean = false, onlyFolders: Boolean = false): List<File> {
     val file = File(path)
-    return file.listFiles()
+    return file.listFiles()!!
             .filter { showHiddenFiles || !it.name.startsWith(".") }
             .filter { !onlyFolders || it.isDirectory }
             .toList()
@@ -49,8 +49,8 @@ fun Context.launchFileIntent(fileModel: FileModel) {
 }
 
 fun createNewFile(fileName: String, path: String, callback: (result: Boolean, message: String) -> Unit) {
-    val fileAlreadyExists = File(path).listFiles().map { it.name }.contains(fileName)
-    if (fileAlreadyExists) {
+    val fileAlreadyExists = File(path).listFiles()?.map { it.name }?.contains(fileName)
+    if (fileAlreadyExists!!) {
         callback(false, "'${fileName}' already exists.")
     } else {
         val file = File(path, fileName)
@@ -69,8 +69,8 @@ fun createNewFile(fileName: String, path: String, callback: (result: Boolean, me
 }
 
 fun createNewFolder(folderName: String, path: String, callback: (result: Boolean, message: String) -> Unit) {
-    val folderAlreadyExists = File(path).listFiles().map { it.name }.contains(folderName)
-    if (folderAlreadyExists) {
+    val folderAlreadyExists = File(path).listFiles()?.map { it.name }?.contains(folderName)
+    if (folderAlreadyExists!!) {
         callback(false, "'${folderName}' already exists.")
     } else {
         val file = File(path, folderName)

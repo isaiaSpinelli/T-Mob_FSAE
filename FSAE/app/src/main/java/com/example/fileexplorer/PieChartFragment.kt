@@ -115,7 +115,7 @@ class PieChartFragment : Fragment(), OnChartValueSelectedListener {
     // Gère le texte au centre du PIE chart
     private fun generateCenterSpannableText(): CharSequence? {
         // Display % or MB
-        var s = SpannableString("")
+        var s : SpannableString
         if ( !pieChart!!.isUsePercentValuesEnabled)
             s = SpannableString("[MB]")
         else
@@ -166,8 +166,8 @@ class PieChartFragment : Fragment(), OnChartValueSelectedListener {
     // init data to Pia Chart
     private fun initDataPieChar(onArticleSelected: List<FileModel>) {
         // test limits entries
-        if (onArticleSelected!!.size >= MAX_ELEMENT ){
-            filesList = onArticleSelected!!.subList(0,MAX_ELEMENT-1)
+        if (onArticleSelected.size >= MAX_ELEMENT ){
+            filesList = onArticleSelected.subList(0,MAX_ELEMENT-1)
             // Send a notif to warn
             callback.notifyUserOnPieChart(2)
         } else {
