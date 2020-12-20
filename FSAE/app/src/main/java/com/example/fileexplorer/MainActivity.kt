@@ -47,7 +47,11 @@ import launchFileIntent
 
 //TODO prepare zip folder for test all function app
 
+
 //TODO Error : first lauch app
+// FIX FOUND :  comment override fun onRequestPermissionsResult and set return from "setupPermissionsOK" always true
+// Don't know how it works,  but the error about multiple permission at runtime disapear. To confirm, because I probably miss
+// Something here.
 
 //TODO choice name folder in setting
 
@@ -189,7 +193,7 @@ class MainActivity : AppCompatActivity(), FilesListFragment.OnItemClickListener,
     }
 
     // Call upon get answer permissons
-    override fun onRequestPermissionsResult(
+   /* override fun onRequestPermissionsResult(
         requestCode: Int, permissions: Array<String>,
         grantResults: IntArray
     ) {
@@ -209,7 +213,7 @@ class MainActivity : AppCompatActivity(), FilesListFragment.OnItemClickListener,
                         "Permission accepted, PLEASE RELAUCH APP",
                         Toast.LENGTH_LONG
                     ).show()
-                    finish()
+                    //finish()
 
 
                     // Permisson denied
@@ -220,7 +224,7 @@ class MainActivity : AppCompatActivity(), FilesListFragment.OnItemClickListener,
                 return
             }
         }
-    }
+    }*/
 
     // Initialize main activity
     private fun doInit() {
@@ -339,7 +343,7 @@ class MainActivity : AppCompatActivity(), FilesListFragment.OnItemClickListener,
         )
         if (!hasPermissions(this, *PERMISSIONS)) {
             ActivityCompat.requestPermissions(this, PERMISSIONS, PERMISSION_ALL)
-            ret = false
+            ret = true
         }
         return ret
     }
