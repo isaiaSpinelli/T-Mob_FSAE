@@ -48,12 +48,8 @@ import launchFileIntent
 //TODO prepare zip folder for test all function app
 
 
-//TODO Error : first lauch app
-// FIX FOUND :  comment override fun onRequestPermissionsResult and set return from "setupPermissionsOK" always true
-// Don't know how it works,  but the error about multiple permission at runtime disapear. To confirm, because I probably miss
-// Something here.
 
-//TODO choice name folder in setting
+//TODO choice name folder OR/AND numbers max entries for pie chart -> in setting
 
 //TODO improve : managment PieChart, PieData, PieDataSet and legend (maybe DataSet in variable class)
 //TODO improve : Fix warning !
@@ -68,8 +64,8 @@ import launchFileIntent
 //TO KNOW: to put files in Android emulator, USE Terminal -> "adb push  <Your/path> /storage/emulated/0/<path>" ( Ex : "adb push D:\Master\S1\T-MobOp\Test_img /storage/emulated/0"
 
 class MainActivity : AppCompatActivity(), FilesListFragment.OnItemClickListener, PieChartFragment.OnHeadlineSelectedListener  {
-    // TODO delete
-    private var notAllowed = true
+
+    private var permissonsAccepted = false
     private lateinit var filesListFragment: FilesListFragment
     private lateinit var menu: Menu
     private val backStackManager = BackStackManager()
@@ -166,34 +162,19 @@ class MainActivity : AppCompatActivity(), FilesListFragment.OnItemClickListener,
             window.decorView.systemUiVisibility.or(View.SYSTEM_UI_FLAG_LIGHT_STATUS_BAR)
         setContentView(R.layout.activity_main)
         setSupportActionBar(toolbar)
+        initViews()
 
         // Check permission
-        notAllowed = !setupPermissionsOK()
+        permissonsAccepted = setupPermissionsOK()
 
-        if (!notAllowed){
+        if (permissonsAccepted){
             createChannel()
             doInit()
-        } else {
-            // TODO error for first lauch app
-            // launch a new coroutine in background and continue, allow to catch answer for permissons
-//            GlobalScope.launch {
-//                var counter = 0
-//                // wait while permission accepted
-//                while(notAllowed){
-//                    delay(100)
-//                    counter++
-//                    if (counter >= 50)
-//                        return@launch
-//                }
-//                doInit()
-//            }
         }
-
-
     }
 
     // Call upon get answer permissons
-   /* override fun onRequestPermissionsResult(
+   override fun onRequestPermissionsResult(
         requestCode: Int, permissions: Array<String>,
         grantResults: IntArray
     ) {
@@ -204,16 +185,14 @@ class MainActivity : AppCompatActivity(), FilesListFragment.OnItemClickListener,
                     grantResults[0] == PackageManager.PERMISSION_GRANTED &&
                     grantResults[1] == PackageManager.PERMISSION_GRANTED
                 ) {
-                    notAllowed = false
-
-                    // TODO error for first lauch app
-                    //doInit()
                     Toast.makeText(
                         this,
-                        "Permission accepted, PLEASE RELAUCH APP",
+                        "Permission accepted !",
                         Toast.LENGTH_LONG
                     ).show()
-                    //finish()
+                    // Launch app 
+                    createChannel()
+                    doInit()
 
 
                     // Permisson denied
@@ -224,22 +203,15 @@ class MainActivity : AppCompatActivity(), FilesListFragment.OnItemClickListener,
                 return
             }
         }
-    }*/
+    }
 
-    // Initialize main activity
+    // Initialize activity
     private fun doInit() {
-
-        // create and display file list fragment
-        filesListFragment = FilesListFragment.build {
-            path = Environment.getExternalStorageDirectory().absolutePath
-        }
+        // launch fragment file list
         supportFragmentManager.beginTransaction()
             .add(R.id.container, filesListFragment)
             .addToBackStack(Environment.getExternalStorageDirectory().absolutePath)
             .commit()
-
-        initViews()
-        initBackStack()
 
         // press on flotting button (change mode : Explorer or PieChart)
         fab.setOnClickListener { _ ->
@@ -262,8 +234,6 @@ class MainActivity : AppCompatActivity(), FilesListFragment.OnItemClickListener,
                 }
 
                 goToPieChartMode(path)
-
-
 
             // return to mode explorer files
             } else {
@@ -343,7 +313,7 @@ class MainActivity : AppCompatActivity(), FilesListFragment.OnItemClickListener,
         )
         if (!hasPermissions(this, *PERMISSIONS)) {
             ActivityCompat.requestPermissions(this, PERMISSIONS, PERMISSION_ALL)
-            ret = true
+            ret = false
         }
         return ret
     }
@@ -359,6 +329,12 @@ class MainActivity : AppCompatActivity(), FilesListFragment.OnItemClickListener,
     // initialize view
     private fun initViews() {
         setSupportActionBar(toolbar)
+
+        // create and display file list fragment
+        filesListFragment = FilesListFragment.build {
+            path = Environment.getExternalStorageDirectory().absolutePath
+        }
+
         // initialize breadcrumb
         breadcrumbRecyclerView.layoutManager =
             LinearLayoutManager(this, LinearLayoutManager.HORIZONTAL, false)
@@ -369,11 +345,13 @@ class MainActivity : AppCompatActivity(), FilesListFragment.OnItemClickListener,
         mBreadcrumbRecyclerAdapter.onItemClickListener = {
 
             // if we need to update desgin
-           if (viewFiles == false){
-               PieChartToFileList()
+            if (viewFiles == false){
+                PieChartToFileList()
             }
             displayFileListFrom(it)
         }
+
+        initBackStack()
     }
 
     // initialize back stack
@@ -384,7 +362,6 @@ class MainActivity : AppCompatActivity(), FilesListFragment.OnItemClickListener,
             updateAdapterData(it)
         }
 
-
         // initialize back stack with root directory
         backStackManager.addToStack(
             fileModel = FileModel(
@@ -394,7 +371,6 @@ class MainActivity : AppCompatActivity(), FilesListFragment.OnItemClickListener,
                 0.0
             )
         )
-
     }
 
     // Switch view from PieChart to Files list
