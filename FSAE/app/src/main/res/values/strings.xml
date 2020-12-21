@@ -8,5 +8,7 @@
     <string name="channel_name_ID">FSAE_channel_0</string>
     <string name="channel_desc">Notifications for FSAE</string>
     <string name="action_seekAndClass">Seek &amp; Class all image files</string>
+    <string name="saved_max_entries_key">max_entries_pie_chart</string>
+    <string name="saved_min_size_entries_key">50</string>
 
 </resources>

@@ -103,9 +103,26 @@
 
     </group>
 
+<!--    <item-->
+<!--        android:id="@+id/action_settings"-->
+<!--        android:orderInCategory="100"-->
+<!--        android:title="@string/action_settings"-->
+<!--        app:showAsAction="never" />-->
+
     <item
-        android:id="@+id/action_settings"
-        android:orderInCategory="100"
+        android:id="@+id/MenuSettings"
         android:title="@string/action_settings"
-        app:showAsAction="never" />
+        app:showAsAction="never"
+        tools:ignore="AlwaysShowAction">
+        <menu>
+            <item
+                android:id="@+id/maxEntries"
+                android:title="Limit entries"
+                app:showAsAction="never" />
+            <item
+                android:id="@+id/minSizeEntries"
+                android:title="Limit size entries"
+                app:showAsAction="never" />
+        </menu>
+    </item>
 </menu>

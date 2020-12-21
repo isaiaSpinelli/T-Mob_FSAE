@@ -23,7 +23,8 @@ import com.github.mikephil.charting.utils.ColorTemplate
 
 class PieChartFragment : Fragment(), OnChartValueSelectedListener {
     // max number entry (if more 20 => add color in legend)
-    private val MAX_ELEMENT = 11
+    private var MAX_ELEMENT = 10
+    private var MIN_SIZE = 50
     private var path: String = ""
     private var filesList: List<FileModel>? = null
     private var pieChart: PieChart? = null
@@ -52,12 +53,16 @@ class PieChartFragment : Fragment(), OnChartValueSelectedListener {
     override fun onAttach(activity: Context) {
         super.onAttach(activity)
         //Toast.makeText(activity, "onAttach", Toast.LENGTH_SHORT).show()
-
     }
     // (2)
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         this.retainInstance = true
+
+        // get default value of max entries AND min size for pie chart
+        val sharedPref2 = activity?.getPreferences(Context.MODE_PRIVATE) ?: return
+        MAX_ELEMENT = sharedPref2.getInt(getString(R.string.saved_max_entries_key), resources.getInteger(R.integer.saved_max_entries_default_key))
+        MIN_SIZE = sharedPref2.getInt(getString(R.string.saved_min_size_entries_key), resources.getInteger(R.integer.saved_min_size_entries_default_key))
     }
     // (3)
     override fun onCreateView(
@@ -123,13 +128,6 @@ class PieChartFragment : Fragment(), OnChartValueSelectedListener {
 
         s.setSpan(RelativeSizeSpan(2f), 0, s.length, 0)
 
-        // Display current Directory :
-        //var directoryName = "Image";
-        //val s = SpannableString("In directory\n" + directoryName)
-        //s.setSpan(RelativeSizeSpan(1.5f), 13, 13 + directoryName.length, 0)
-        //s.setSpan(RelativeSizeSpan(1.5f), 0, 4, 0)
-        //s.setSpan(StyleSpan(Typeface.ITALIC), s.length - 5, s.length, 0)
-        //s.setSpan(ForegroundColorSpan(ColorTemplate.getHoloBlue()), s.length - 5, s.length, 0)
         return s
     }
 
@@ -156,26 +154,27 @@ class PieChartFragment : Fragment(), OnChartValueSelectedListener {
 
     }
 
-    // TODO delete
     override fun onNothingSelected() {
-        // Toggle X (labels) valeur
-        //pieChart?.setDrawEntryLabels(!pieChart!!.isDrawEntryLabelsEnabled());
-        //pieChart?.invalidate();
+        // manged in onSingleTapUp function
     }
 
     // init data to Pia Chart
     private fun initDataPieChar(onArticleSelected: List<FileModel>) {
+        val sharedPref2 = activity?.getPreferences(Context.MODE_PRIVATE) ?: return
+
+        // filter entries (default size min = 0.05 MB)
+        // get preference min size value in KB
+        MIN_SIZE = sharedPref2.getInt(getString(R.string.saved_min_size_entries_key), MIN_SIZE)
+        filesList = onArticleSelected!!.filter { it.sizeInMB >= (MIN_SIZE / 1000f)  }
+
+        // get preference max entries (default = 10)
+        MAX_ELEMENT = sharedPref2.getInt(getString(R.string.saved_max_entries_key), MAX_ELEMENT)
         // test limits entries
-        if (onArticleSelected.size >= MAX_ELEMENT ){
-            filesList = onArticleSelected.subList(0,MAX_ELEMENT-1)
+        if (filesList!!.size > MAX_ELEMENT ){
+            filesList = onArticleSelected.subList(0,MAX_ELEMENT)
             // Send a notif to warn
             callback.notifyUserOnPieChart(2)
-        } else {
-            filesList = onArticleSelected
         }
-
-        // Display only not empty entries (min = 0.05 MB)
-        filesList = filesList!!.filter { it.sizeInMB >= 0.05  }
 
         // Applique les données sur le Pie chart
         pieChart!!.setData(setupData())

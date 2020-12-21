@@ -26,6 +26,7 @@ import androidx.appcompat.app.AppCompatActivity
 import androidx.core.app.ActivityCompat
 import androidx.core.app.NotificationCompat
 import androidx.core.app.NotificationManagerCompat
+import androidx.core.text.set
 import androidx.fragment.app.Fragment
 import androidx.recyclerview.widget.LinearLayoutManager
 import com.example.fileexplorer.fileslist.FilesListFragment
@@ -37,6 +38,8 @@ import getFileModelsFromFiles
 import getFilesFromPath
 import kotlinx.android.synthetic.main.activity_main.*
 import kotlinx.android.synthetic.main.dialog_enter_name.view.*
+import kotlinx.android.synthetic.main.dialog_enter_name.view.nameEditText
+import kotlinx.android.synthetic.main.dialog_enter_number.view.*
 import launchFileIntent
 
 
@@ -48,12 +51,8 @@ import launchFileIntent
 //TODO prepare zip folder for test all function app
 
 
-
-//TODO choice name folder OR/AND numbers max entries for pie chart -> in setting
-
 //TODO improve : managment PieChart, PieData, PieDataSet and legend (maybe DataSet in variable class)
 //TODO improve : Fix warning !
-//TODO improve : Limit display in chart if empty
 
 //TODO improve : Use in priority the SD card
 
@@ -104,8 +103,10 @@ class MainActivity : AppCompatActivity(), FilesListFragment.OnItemClickListener,
                 text = "This folder is empty"
             }
             2 -> {
+                val sharedPref = this.getPreferences(Context.MODE_PRIVATE) ?: return
+                val limiteEntries = sharedPref.getInt(getString(R.string.saved_max_entries_key), resources.getInteger(R.integer.saved_max_entries_default_key))
                 title = "Too many entries"
-                text = "Entries are limited to 10"
+                text = "Entries are limited to "+limiteEntries.toString()
             }
         }
 
@@ -134,7 +135,7 @@ class MainActivity : AppCompatActivity(), FilesListFragment.OnItemClickListener,
 
     companion object {
         private const val OPTIONS_DIALOG_TAG: String = "com.example.fileexplorer.options_dialog"
-        public var sortBy = 0
+        var sortBy = 0
     }
 
     override fun onResume() {
@@ -164,6 +165,13 @@ class MainActivity : AppCompatActivity(), FilesListFragment.OnItemClickListener,
         setSupportActionBar(toolbar)
         initViews()
 
+//        val sharedPref = this?.getPreferences(Context.MODE_PRIVATE) ?: return
+//        with (sharedPref.edit()) {
+//            putInt(getString(R.string.saved_max_entries_key), resources.getInteger(R.integer.saved_max_entries_default_key))
+//            //putInt(getString(R.string.saved_min_size_entries_key), resources.getInteger(R.integer.saved_min_size_entries_default_key))
+//            apply()
+//        }
+
         // Check permission
         permissonsAccepted = setupPermissionsOK()
 
@@ -190,7 +198,7 @@ class MainActivity : AppCompatActivity(), FilesListFragment.OnItemClickListener,
                         "Permission accepted !",
                         Toast.LENGTH_LONG
                     ).show()
-                    // Launch app 
+                    // Launch app
                     createChannel()
                     doInit()
 
@@ -431,12 +439,16 @@ class MainActivity : AppCompatActivity(), FilesListFragment.OnItemClickListener,
     // Handle action bar item clicks here
     override fun onOptionsItemSelected(item: MenuItem): Boolean {
         when (item.itemId) {
-            //TODO implement setting
-            R.id.action_settings -> {
-                true
+
+            // -- SETTINGS --
+            R.id.maxEntries -> {
+                askMaxEntriesUser()
+            }
+            R.id.minSizeEntries -> {
+                askMinSizeUser()
             }
 
-            // -- SEEK AND CLASS ALL IMAGE FILES
+            // -- SEEK AND CLASS ALL IMAGE FILES --
             R.id.action_seekAndClass -> {
 
                 // Ask a confirmation
@@ -553,7 +565,6 @@ class MainActivity : AppCompatActivity(), FilesListFragment.OnItemClickListener,
     }
 
     private fun seekAndClassImageFiles() {
-
 
         // directory's name for class all image files
         val ourDirectoryName = "A_img_1"
@@ -676,14 +687,64 @@ class MainActivity : AppCompatActivity(), FilesListFragment.OnItemClickListener,
         }
     }
 
+    // ask to user for maximum entries for pie chart
+    private fun askMaxEntriesUser() {
+        val bottomSheetDialog = BottomSheetDialog(this)
+        val view = LayoutInflater.from(this).inflate(R.layout.dialog_enter_number, null)
+        view.enterNumberTextView.setText("Enter a maximum entries")
+
+        val sharedPref = this.getPreferences(Context.MODE_PRIVATE) ?: return
+        val currentMaxEntries = sharedPref.getInt(getString(R.string.saved_max_entries_key), resources.getInteger(R.integer.saved_max_entries_default_key))
+        view.numberEditText.setText(currentMaxEntries.toString())
+
+        view.changeButton.setOnClickListener {
+            val numberMaxEntries = view.numberEditText.text.toString().toInt()
+            if (numberMaxEntries != 0) {
+
+                //val sharedPref = this.getPreferences(Context.MODE_PRIVATE) ?: return@setOnClickListener
+                with (sharedPref.edit()) {
+                    putInt(getString(R.string.saved_max_entries_key), numberMaxEntries)
+                    apply()
+                }
+                bottomSheetDialog.dismiss()
+                updateContentOfCurrentFragment()
+
+            }
+        }
+        bottomSheetDialog.setContentView(view)
+        bottomSheetDialog.show()
+    }
 
 
+    // ask to user for minimum size of entries for pie chart (KB)
+    private fun askMinSizeUser() {
+        val bottomSheetDialog = BottomSheetDialog(this)
+        val view = LayoutInflater.from(this).inflate(R.layout.dialog_enter_number, null)
+        view.enterNumberTextView.setText("Enter a minimum size of entries [KB]")
+
+        val sharedPref = this.getPreferences(Context.MODE_PRIVATE) ?: return
+        val currentMinSizeEntries = sharedPref.getInt(getString(R.string.saved_min_size_entries_key), resources.getInteger(R.integer.saved_min_size_entries_default_key))
+        view.numberEditText.setText(currentMinSizeEntries.toString())
+
+        view.changeButton.setOnClickListener {
+            val numberMinSizeEntries = view.numberEditText.text.toString().toInt()
+            //val sharedPref = this.getPreferences(Context.MODE_PRIVATE) ?: return@setOnClickListener
+            with (sharedPref.edit()) {
+                putInt(getString(R.string.saved_min_size_entries_key), numberMinSizeEntries)
+                apply()
+            }
+            bottomSheetDialog.dismiss()
+            updateContentOfCurrentFragment()
+        }
+        bottomSheetDialog.setContentView(view)
+        bottomSheetDialog.show()
+    }
 
     // create a new File in current Dir
     private fun createNewFileInCurrentDirectory() {
         val bottomSheetDialog = BottomSheetDialog(this)
         val view = LayoutInflater.from(this).inflate(R.layout.dialog_enter_name, null)
-        view.createButton.setOnClickListener {
+        view.changeButton.setOnClickListener {
             val fileName = view.nameEditText.text.toString()
             if (fileName.isNotEmpty()) {
                 createNewFile(fileName, backStackManager.top.path) { _, _ ->
@@ -700,7 +761,7 @@ class MainActivity : AppCompatActivity(), FilesListFragment.OnItemClickListener,
     private fun createNewFolderInCurrentDirectory() {
         val bottomSheetDialog = BottomSheetDialog(this)
         val view = LayoutInflater.from(this).inflate(R.layout.dialog_enter_name, null)
-        view.createButton.setOnClickListener {
+        view.changeButton.setOnClickListener {
             val fileName = view.nameEditText.text.toString()
             if (fileName.isNotEmpty()) {
                 createNewFolder(fileName, backStackManager.top.path) { _, _ ->
