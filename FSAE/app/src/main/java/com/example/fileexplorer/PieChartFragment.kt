@@ -174,6 +174,9 @@ class PieChartFragment : Fragment(), OnChartValueSelectedListener {
             filesList = onArticleSelected
         }
 
+        // Display only not empty entries (min = 0.05 MB)
+        filesList = filesList!!.filter { it.sizeInMB >= 0.05  }
+
         // Applique les données sur le Pie chart
         pieChart!!.setData(setupData())
 
