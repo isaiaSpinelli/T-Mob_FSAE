@@ -26,7 +26,6 @@ import androidx.appcompat.app.AppCompatActivity
 import androidx.core.app.ActivityCompat
 import androidx.core.app.NotificationCompat
 import androidx.core.app.NotificationManagerCompat
-import androidx.core.text.set
 import androidx.fragment.app.Fragment
 import androidx.recyclerview.widget.LinearLayoutManager
 import com.example.fileexplorer.fileslist.FilesListFragment
@@ -48,19 +47,14 @@ import launchFileIntent
 // http://thetechnocafe.com/build-a-file-explorer-in-kotlin-part-1-introduction-and-set-up/
 // https://stackoverflow.com/questions/11015833/getting-list-of-all-files-of-a-specific-type
 
-//TODO prepare zip folder for test all function app
-
-
-//TODO improve : managment PieChart, PieData, PieDataSet and legend (maybe DataSet in variable class)
 //TODO improve : Fix warning !
-
 //TODO improve : Use in priority the SD card
 
-
+//TO KNOW: Generate APK : Build -> Build Bundles / APK -> Build APK
+//TO KNOW: Before generate ZIP : Build -> Clean Projet
 
 //TO KNOW: PieChart's Legend can't to have more X label entries ( X = different colors (now 19))
-//TO KNOW: when PieChart display with too much elements, its ugly (now max 10)
-//TO KNOW: to put files in Android emulator, USE Terminal -> "adb push  <Your/path> /storage/emulated/0/<path>" ( Ex : "adb push D:\Master\S1\T-MobOp\Test_img /storage/emulated/0"
+//TO KNOW: to put files in Android emulator, USE Terminal -> "adb push  <Your/path> /storage/emulated/0/<path>" ( Ex : "adb push D:\Master\S1\T-MobOp\Test_img /storage/emulated/0" )
 
 class MainActivity : AppCompatActivity(), FilesListFragment.OnItemClickListener, PieChartFragment.OnHeadlineSelectedListener  {
 
@@ -161,16 +155,10 @@ class MainActivity : AppCompatActivity(), FilesListFragment.OnItemClickListener,
         super.onCreate(savedInstanceState)
         window.decorView.systemUiVisibility =
             window.decorView.systemUiVisibility.or(View.SYSTEM_UI_FLAG_LIGHT_STATUS_BAR)
+        // Init views
         setContentView(R.layout.activity_main)
         setSupportActionBar(toolbar)
         initViews()
-
-//        val sharedPref = this?.getPreferences(Context.MODE_PRIVATE) ?: return
-//        with (sharedPref.edit()) {
-//            putInt(getString(R.string.saved_max_entries_key), resources.getInteger(R.integer.saved_max_entries_default_key))
-//            //putInt(getString(R.string.saved_min_size_entries_key), resources.getInteger(R.integer.saved_min_size_entries_default_key))
-//            apply()
-//        }
 
         // Check permission
         permissonsAccepted = setupPermissionsOK()
@@ -417,6 +405,7 @@ class MainActivity : AppCompatActivity(), FilesListFragment.OnItemClickListener,
         return true
     }
 
+    // (not used for now)
     fun createSymLink(symLinkFilePath: String, originalFilePath: String): Boolean {
         try {
             if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.LOLLIPOP) {
@@ -567,7 +556,7 @@ class MainActivity : AppCompatActivity(), FilesListFragment.OnItemClickListener,
     private fun seekAndClassImageFiles() {
 
         // directory's name for class all image files
-        val ourDirectoryName = "A_img_1"
+        val ourDirectoryName = "imgClassify"
         var seek_class = seekAndClassify(backStackManager.top.path, ourDirectoryName, true)
 
         // seek all image files
@@ -744,7 +733,7 @@ class MainActivity : AppCompatActivity(), FilesListFragment.OnItemClickListener,
     private fun createNewFileInCurrentDirectory() {
         val bottomSheetDialog = BottomSheetDialog(this)
         val view = LayoutInflater.from(this).inflate(R.layout.dialog_enter_name, null)
-        view.changeButton.setOnClickListener {
+        view.createButton.setOnClickListener {
             val fileName = view.nameEditText.text.toString()
             if (fileName.isNotEmpty()) {
                 createNewFile(fileName, backStackManager.top.path) { _, _ ->
@@ -761,7 +750,7 @@ class MainActivity : AppCompatActivity(), FilesListFragment.OnItemClickListener,
     private fun createNewFolderInCurrentDirectory() {
         val bottomSheetDialog = BottomSheetDialog(this)
         val view = LayoutInflater.from(this).inflate(R.layout.dialog_enter_name, null)
-        view.changeButton.setOnClickListener {
+        view.createButton.setOnClickListener {
             val fileName = view.nameEditText.text.toString()
             if (fileName.isNotEmpty()) {
                 createNewFolder(fileName, backStackManager.top.path) { _, _ ->
